@@ -589,7 +589,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
         <span class="role-option-desc" id="roleDomDesc">Herr/in — erstellt Aufgaben, vergibt Punkte und bewertet Nachweise.</span>
       </span>
     </button>
-    <button type="button" class="role-option role-option-sub" onclick="chooseRole('sub')">
+    <button type="button" id="roleOptSub" class="role-option role-option-sub" onclick="chooseRole('sub')">
       <span class="role-option-badge">S</span>
       <span class="role-option-text">
         <span class="role-option-title" id="roleSubTitle">Ich bin Sub</span>
@@ -1131,6 +1131,7 @@ const I18N = {
     roleReportHint: 'Tippen, um Erledigung zu melden',
     rolePinTip: 'Tipp: Richte unten einen PIN ein, damit nur du die Rolle wechseln kannst.',
     rolePartnerIsDom: 'Dein Partner ist bereits Dom — wähle Sub.',
+    rolePartnerIsSub: 'Dein Partner ist bereits Sub — wähle Dom.',
     roleNoDom: 'Noch kein Dom in dieser Paarung. Damit jemand Aufgaben verwalten kann, sollte eines der Geräte die Dom-Rolle übernehmen.',
     roleBecomeDom: 'Zur Dom-Rolle wechseln',
     roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
@@ -1394,6 +1395,7 @@ const I18N = {
     roleReportHint: 'Tap to report as done',
     rolePinTip: 'Tip: set a PIN below so only you can change roles.',
     rolePartnerIsDom: 'Your partner is already the Dom — choose Sub.',
+    rolePartnerIsSub: 'Your partner is already the Sub — choose Dom.',
     roleNoDom: 'No Dom in this pairing yet. One device should take the Dom role so tasks can be managed.',
     roleBecomeDom: 'Switch to Dom role',
     roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
@@ -1963,7 +1965,10 @@ function logout() {
 // Geräte-Attribut: dieses Gerät ist entweder Dom (Herr) oder Sub.
 // Lokal in localStorage + pro Paarung in Firebase pflichten/{code}/roles/{deviceId}.
 // Vorstufe für den Mehr-Herren-Modus — isolierte Stränge bauen darauf auf.
-let currentRole = (() => { try { return localStorage.getItem('devotion_role'); } catch(e) { return null; } })(); // 'dom' | 'sub' | null
+let currentRole = null; // 'dom' | 'sub' | null — wird PRO PAARUNG (Code) geladen, nicht global
+function localRoleKey(code) { return 'devotion_role_' + (code || syncCode || ''); }
+function loadLocalRole(code) { try { return localStorage.getItem(localRoleKey(code)); } catch(e) { return null; } }
+function saveLocalRole(code, role) { try { localStorage.setItem(localRoleKey(code), role); } catch(e) {} }
 
 function isDom() { return currentRole === 'dom'; }
 function isSub() { return currentRole === 'sub'; }
@@ -1971,7 +1976,7 @@ function isSub() { return currentRole === 'sub'; }
 function setRole(role) {
   if (role !== 'dom' && role !== 'sub') return;
   currentRole = role;
-  try { localStorage.setItem('devotion_role', role); } catch(e) {}
+  saveLocalRole(syncCode, role); // pro Paarung speichern, nicht global
   if (db && syncCode) db.ref('pflichten/' + syncCode + '/roles/' + deviceId).set(role);
   try { trackEvent('role_set', { role: role }); } catch(e) {}
   applyRoleUI();
@@ -1987,10 +1992,11 @@ function loadRole() {
     const roles = snap.val() || {};
     const others = Object.keys(roles).filter(k => k !== deviceId);
     window._otherHasDom = others.some(k => roles[k] === 'dom');
+    window._otherHasSub = others.some(k => roles[k] === 'sub');
     window._pairHasDom  = Object.keys(roles).some(k => roles[k] === 'dom');
     const remote = roles[deviceId];
     if (remote === 'dom' || remote === 'sub') {
-      if (remote !== currentRole) { currentRole = remote; try { localStorage.setItem('devotion_role', remote); } catch(e) {} }
+      if (remote !== currentRole) { currentRole = remote; saveLocalRole(syncCode, remote); }
       applyRoleUI();
     } else if (!currentRole) {
       showRoleSelect();           // weder lokal noch remote → einmalig abfragen
@@ -2009,23 +2015,29 @@ function showRoleSelect() {
   set('roleDomTitle','roleDomTitle'); set('roleDomDesc','roleDomDesc');
   set('roleSubTitle','roleSubTitle'); set('roleSubDesc','roleSubDesc');
   set('roleSelHint','roleSelHint');
-  // Verhindert 2× Dom: ist der Partner schon Dom, Dom-Option sperren + Hinweis zeigen
+  // Lenkt zur freien Rolle: die vom Partner belegte Rolle sperren (verhindert 2× Dom / 2× Sub)
   const domOpt = document.getElementById('roleOptDom');
+  const subOpt = document.getElementById('roleOptSub');
   const partnerHint = document.getElementById('rolePartnerHint');
-  if (window._otherHasDom) {
-    if (domOpt) { domOpt.disabled = true; domOpt.style.opacity = '0.4'; domOpt.style.pointerEvents = 'none'; }
-    if (partnerHint) { partnerHint.style.display = ''; partnerHint.textContent = t('rolePartnerIsDom'); }
-  } else {
-    if (domOpt) { domOpt.disabled = false; domOpt.style.opacity = ''; domOpt.style.pointerEvents = ''; }
-    if (partnerHint) partnerHint.style.display = 'none';
-  }
+  const setOpt = (opt, locked) => { if (!opt) return; opt.disabled = locked; opt.style.opacity = locked ? '0.4' : ''; opt.style.pointerEvents = locked ? 'none' : ''; };
+  setOpt(domOpt, !!window._otherHasDom);
+  setOpt(subOpt, !!window._otherHasSub);
+  let hint = '';
+  if (window._otherHasDom) hint = t('rolePartnerIsDom');
+  else if (window._otherHasSub) hint = t('rolePartnerIsSub');
+  if (partnerHint) { partnerHint.style.display = hint ? '' : 'none'; partnerHint.textContent = hint; }
   el.classList.remove('hidden');
 }
 function chooseRole(role) {
-  // Verhindert 2× Dom: in der Paarung gibt es bereits einen anderen Dom
+  // Verhindert 2× Dom / 2× Sub: die vom Partner belegte Rolle ist gesperrt
   if (role === 'dom' && window._otherHasDom) {
     const ph = document.getElementById('rolePartnerHint');
     if (ph) { ph.style.display = ''; ph.textContent = t('rolePartnerIsDom'); }
+    return;
+  }
+  if (role === 'sub' && window._otherHasSub) {
+    const ph = document.getElementById('rolePartnerHint');
+    if (ph) { ph.style.display = ''; ph.textContent = t('rolePartnerIsSub'); }
     return;
   }
   // Schutz: Hochstufen zu Dom verlangt den PIN (sofern gesetzt). Sub kennt ihn nicht →
@@ -2120,6 +2132,7 @@ function initSync(code) {
   }
   syncCode = code;
   saveCodeLocally(code);
+  currentRole = loadLocalRole(code); // Rolle dieser Paarung laden (neuer Code → null → wird neu gefragt)
   document.getElementById('currentCodeDisplay').textContent = code;
 
   try {
