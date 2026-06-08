@@ -444,7 +444,7 @@ body.has-ads { padding-bottom:200px; }
 .role-hint { font-size:12px; color:var(--text2); margin-top:14px; text-align:center; }
 
 #page-week .header { position:relative; }
-.role-badge { position:absolute; top:4px; left:10px; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:pointer; user-select:none; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.45); transition:transform .15s; }
+.role-badge { position:absolute; top:calc(8px + env(safe-area-inset-top,0px)); left:10px; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:pointer; user-select:none; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.45); transition:transform .15s; }
 .role-badge:active { transform:scale(.9); }
 .role-badge-dom { background:#e5384a; border:2px solid #ff6b7a; color:#fff; }
 .role-badge-sub { background:#2f86d6; border:2px solid #6bb0ee; color:#fff; }
