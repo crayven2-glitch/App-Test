@@ -598,6 +598,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     </button>
   </div>
   <p class="role-hint" id="roleSelHint">Du kannst das später in den Einstellungen ändern.</p>
+  <a id="roleSelectBackLink" onclick="roleSelectBack()" style="display:inline-block;margin-top:8px;color:var(--text2);font-size:13px;text-decoration:underline;cursor:pointer;">Anderen Code verwenden</a>
 </div>
 
 <!-- PRICING SCREEN -->
@@ -1133,6 +1134,8 @@ const I18N = {
     rolePartnerIsDom: 'Dein Partner ist bereits Dom — wähle Sub.',
     rolePartnerIsSub: 'Dein Partner ist bereits Sub — wähle Dom.',
     roleSwapHint: 'Wählst du die Rolle deines Partners, tauscht ihr beide.',
+    rolePairFull: 'Diese Paarung hat schon Dom und Sub. Wählst du eine Rolle, ersetzt du das bisherige Gerät.',
+    roleSelectBackLabel: 'Anderen Code verwenden',
     roleNoDom: 'Noch kein Dom in dieser Paarung. Damit jemand Aufgaben verwalten kann, sollte eines der Geräte die Dom-Rolle übernehmen.',
     roleBecomeDom: 'Zur Dom-Rolle wechseln',
     roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
@@ -1398,6 +1401,8 @@ const I18N = {
     rolePartnerIsDom: 'Your partner is already the Dom — choose Sub.',
     rolePartnerIsSub: 'Your partner is already the Sub — choose Dom.',
     roleSwapHint: 'Pick your partner\'s role and you\'ll both swap.',
+    rolePairFull: 'This pairing already has a Dom and a Sub. Picking a role replaces that device.',
+    roleSelectBackLabel: 'Use a different code',
     roleNoDom: 'No Dom in this pairing yet. One device should take the Dom role so tasks can be managed.',
     roleBecomeDom: 'Switch to Dom role',
     roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
@@ -2023,26 +2028,31 @@ function showRoleSelect() {
   const partnerHint = document.getElementById('rolePartnerHint');
   const setOpt = (opt, locked) => { if (!opt) return; opt.disabled = locked; opt.style.opacity = locked ? '0.4' : ''; opt.style.pointerEvents = locked ? 'none' : ''; };
   const isInitial = !currentRole; // Erst-Wahl vs. nachträglicher Wechsel
-  // Erst-Wahl: belegte Partner-Rolle sperren (kein 2× Dom / 2× Sub).
+  const beideBelegt = !!window._otherHasDom && !!window._otherHasSub; // Paarung schon voll (Dom+Sub)
+  // Erst-Wahl: belegte Partner-Rolle sperren (kein 2× Dom / 2× Sub) — ABER nie beide sperren
+  // (sonst Sackgasse). Sind beide belegt, freie Wahl (ersetzt das bisherige Gerät der Rolle).
   // Wechsel: nichts sperren — Wahl der belegten Gegenrolle löst einen Tausch aus.
-  setOpt(domOpt, isInitial && !!window._otherHasDom);
-  setOpt(subOpt, isInitial && !!window._otherHasSub);
+  setOpt(domOpt, isInitial && !beideBelegt && !!window._otherHasDom);
+  setOpt(subOpt, isInitial && !beideBelegt && !!window._otherHasSub);
   let hint = '';
-  if (isInitial && window._otherHasDom) hint = t('rolePartnerIsDom');
+  if (isInitial && beideBelegt) hint = t('rolePairFull');
+  else if (isInitial && window._otherHasDom) hint = t('rolePartnerIsDom');
   else if (isInitial && window._otherHasSub) hint = t('rolePartnerIsSub');
   else if (!isInitial && (window._otherHasDom || window._otherHasSub)) hint = t('roleSwapHint');
+  const backLink = document.getElementById('roleSelectBackLink'); if (backLink) backLink.textContent = t('roleSelectBackLabel');
   if (partnerHint) { partnerHint.style.display = hint ? '' : 'none'; partnerHint.textContent = hint; }
   el.classList.remove('hidden');
 }
 function chooseRole(role) {
   // Nur bei der ERST-Wahl die belegte Partner-Rolle blockieren (kein 2× Dom / 2× Sub).
   // Beim nachträglichen Ändern NICHT blockieren — da löst die Gegenrolle einen Tausch aus.
-  if (!currentRole && role === 'dom' && window._otherHasDom) {
+  const beideBelegt = !!window._otherHasDom && !!window._otherHasSub; // nie blockieren, wenn beide belegt (Sackgasse)
+  if (!currentRole && !beideBelegt && role === 'dom' && window._otherHasDom) {
     const ph = document.getElementById('rolePartnerHint');
     if (ph) { ph.style.display = ''; ph.textContent = t('rolePartnerIsDom'); }
     return;
   }
-  if (!currentRole && role === 'sub' && window._otherHasSub) {
+  if (!currentRole && !beideBelegt && role === 'sub' && window._otherHasSub) {
     const ph = document.getElementById('rolePartnerHint');
     if (ph) { ph.style.display = ''; ph.textContent = t('rolePartnerIsSub'); }
     return;
@@ -2063,6 +2073,9 @@ function applyChosenRole(role) {
     for (const dev of Object.keys(roles)) {
       if (dev !== deviceId && roles[dev] === role) {
         db.ref('pflichten/' + syncCode + '/roles/' + dev).set(currentRole);
+        // Rollentausch ändert, wer Dom ist → PIN zurücksetzen; der neue Dom wird neu gefragt
+        if (currentRef) currentRef.child('settingsPin').remove();
+        settingsPin = null;
         break;
       }
     }
@@ -2077,6 +2090,14 @@ function openRoleChange() { showRoleSelect(); } // Rolle nachträglich ändern
 function roleStateAction() {
   if (window._roleStateTarget === 'dom') openRoleChange();
   else if (window._roleStateTarget === 'sub') applyChosenRole('sub');
+}
+// Ausweg aus der Rollen-Auswahl zurück zur Code-Eingabe (z.B. um einen anderen Code zu nehmen)
+function roleSelectBack() {
+  const el = document.getElementById('roleSelectScreen'); if (el) el.classList.add('hidden');
+  if (currentRef) currentRef.off();
+  syncCode = null;
+  try { localStorage.removeItem('pflichten_sync_code_2'); } catch(e) {}
+  const setup = document.getElementById('setupScreen'); if (setup) setup.classList.remove('hidden');
 }
 
 // Setzt die rollenabhängige UI durch: body-Klasse (CSS-Sperren), Badge, Header-Edit.
