@@ -932,7 +932,10 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div><!-- /dom-only -->
   <div class="lang-card" style="flex-direction:column;align-items:stretch;gap:10px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
-      <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="roleSettingsLabel">Rolle</span></div>
+      <div>
+        <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="roleSettingsLabel">Rolle</span></div>
+        <div id="roleSettingsSub" style="font-size:12.5px;color:var(--text2);margin-top:3px;"></div>
+      </div>
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
         <span id="roleSettingsValue" class="role-badge">—</span>
         <button class="notif-btn dom-only" id="roleChangeBtn" onclick="openRoleChange()" style="white-space:nowrap;">Ändern</button>
@@ -1160,6 +1163,9 @@ const I18N = {
     roleNoneDesc: 'Wir teilen uns alles — beide gleichberechtigt.',
     roleNoneLabel: 'Keine Rollen',
     roleSetup: 'Rollen einrichten',
+    roleYouAreDom: 'Du bist Dom',
+    roleYouAreSub: 'Du bist Sub',
+    roleYouAreNone: 'Ohne feste Rollen',
     roleNoDom: 'Noch kein Dom in dieser Paarung. Damit jemand Aufgaben verwalten kann, sollte eines der Geräte die Dom-Rolle übernehmen.',
     roleBecomeDom: 'Zur Dom-Rolle wechseln',
     roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
@@ -1432,6 +1438,9 @@ const I18N = {
     roleNoneDesc: 'We share everything — both equal.',
     roleNoneLabel: 'No roles',
     roleSetup: 'Set up roles',
+    roleYouAreDom: 'You are the Dom',
+    roleYouAreSub: 'You are the Sub',
+    roleYouAreNone: 'No fixed roles',
     roleNoDom: 'No Dom in this pairing yet. One device should take the Dom role so tasks can be managed.',
     roleBecomeDom: 'Switch to Dom role',
     roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
@@ -2171,6 +2180,7 @@ function applyRoleUI() {
   }
   const rcb = document.getElementById('roleChangeBtn'); if (rcb) rcb.textContent = currentRole === 'none' ? t('roleSetup') : t('roleChange');
   const rsl = document.getElementById('roleSettingsLabel'); if (rsl) rsl.textContent = t('roleSettingsLabelText');
+  const rss = document.getElementById('roleSettingsSub'); if (rss) rss.textContent = isDom() ? t('roleYouAreDom') : isSub() ? t('roleYouAreSub') : t('roleYouAreNone');
   // Hinweis für Dom ohne PIN: ohne PIN greift der Rollenschutz nicht
   const tip = document.getElementById('rolePinTip');
   if (tip) { const show = isDom() && !hasPinSet(); tip.style.display = show ? '' : 'none'; if (show) tip.textContent = t('rolePinTip'); }
