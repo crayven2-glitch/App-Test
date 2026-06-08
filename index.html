@@ -2069,15 +2069,19 @@ function showRoleSelect() {
   set('roleSelHint','roleSelHint');
   const domOpt = document.getElementById('roleOptDom');
   const subOpt = document.getElementById('roleOptSub');
+  const noneOpt = document.getElementById('roleOptNone');
   const partnerHint = document.getElementById('rolePartnerHint');
   const setOpt = (opt, locked) => { if (!opt) return; opt.disabled = locked; opt.style.opacity = locked ? '0.4' : ''; opt.style.pointerEvents = locked ? 'none' : ''; };
   const isInitial = !currentRole; // Erst-Wahl vs. nachträglicher Wechsel
   const beideBelegt = !!window._otherHasDom && !!window._otherHasSub; // Paarung schon voll (Dom+Sub)
+  const partnerHatRolle = !!window._otherHasDom || !!window._otherHasSub; // Partner hat feste Rolle gewählt
   // Erst-Wahl: belegte Partner-Rolle sperren (kein 2× Dom / 2× Sub) — ABER nie beide sperren
   // (sonst Sackgasse). Sind beide belegt, freie Wahl (ersetzt das bisherige Gerät der Rolle).
+  // Hat der Partner eine feste Rolle, ist auch „Ohne feste Rollen" gesperrt → nur die Gegenrolle bleibt.
   // Wechsel: nichts sperren — Wahl der belegten Gegenrolle löst einen Tausch aus.
   setOpt(domOpt, isInitial && !beideBelegt && !!window._otherHasDom);
   setOpt(subOpt, isInitial && !beideBelegt && !!window._otherHasSub);
+  setOpt(noneOpt, isInitial && !beideBelegt && partnerHatRolle);
   let hint = '';
   if (isInitial && beideBelegt) hint = t('rolePairFull');
   else if (isInitial && window._otherHasDom) hint = t('rolePartnerIsDom');
@@ -2101,6 +2105,11 @@ function chooseRole(role) {
   if (!currentRole && !beideBelegt && role === 'sub' && window._otherHasSub) {
     const ph = document.getElementById('rolePartnerHint');
     if (ph) { ph.style.display = ''; ph.textContent = t('rolePartnerIsSub'); }
+    return;
+  }
+  if (!currentRole && !beideBelegt && role === 'none' && (window._otherHasDom || window._otherHasSub)) {
+    const ph = document.getElementById('rolePartnerHint');
+    if (ph) { ph.style.display = ''; ph.textContent = t(window._otherHasDom ? 'rolePartnerIsDom' : 'rolePartnerIsSub'); }
     return;
   }
   // Schutz: Hochstufen zu Dom verlangt den PIN (sofern gesetzt). Sub kennt ihn nicht →
