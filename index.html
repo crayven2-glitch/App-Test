@@ -580,8 +580,9 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   <div class="setup-app-title">Devotion</div>
   <h2 id="roleSelTitle">Wer bist du?</h2>
   <p id="roleSelDesc">Lege fest, welche Rolle dieses Gerät in eurer Dynamik hat. Das bestimmt, was du hier tun kannst.</p>
+  <p id="rolePartnerHint" style="display:none;color:#6ec1e4;font-size:13px;margin:-4px 0 10px;"></p>
   <div class="role-options">
-    <button type="button" class="role-option role-option-dom" onclick="chooseRole('dom')">
+    <button type="button" id="roleOptDom" class="role-option role-option-dom" onclick="chooseRole('dom')">
       <span class="role-option-badge">D</span>
       <span class="role-option-text">
         <span class="role-option-title" id="roleDomTitle">Ich bin Dom</span>
@@ -915,7 +916,12 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="roleSettingsLabel">Rolle</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <span id="roleSettingsValue" class="role-badge">—</span>
-      <button class="notif-btn" id="roleChangeBtn" onclick="openRoleChange()">Ändern</button>
+      <button class="notif-btn dom-only" id="roleChangeBtn" onclick="openRoleChange()">Ändern</button>
+    </div>
+    <div class="dom-only" id="rolePinTip" style="display:none;font-size:11px;color:var(--text2);margin-top:8px;line-height:1.4;"></div>
+    <div id="roleStateWarn" style="display:none;margin-top:8px;">
+      <div id="roleStateText" style="font-size:11px;color:var(--yellow);line-height:1.4;margin-bottom:6px;"></div>
+      <button class="notif-btn" id="roleStateBtn" style="display:none" onclick="roleStateAction()">—</button>
     </div>
   </div>
   <div class="lang-card">
@@ -1123,6 +1129,12 @@ const I18N = {
     roleChangeSub: 'Dieses Gerät: ',
     roleSubLocked: 'Nur der Dom kann Aufgaben und Punkte verwalten.',
     roleReportHint: 'Tippen, um Erledigung zu melden',
+    rolePinTip: 'Tipp: Richte unten einen PIN ein, damit nur du die Rolle wechseln kannst.',
+    rolePartnerIsDom: 'Dein Partner ist bereits Dom — wähle Sub.',
+    roleNoDom: 'Noch kein Dom in dieser Paarung. Damit jemand Aufgaben verwalten kann, sollte eines der Geräte die Dom-Rolle übernehmen.',
+    roleBecomeDom: 'Zur Dom-Rolle wechseln',
+    roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
+    roleBecomeSub: 'Zur Sub-Rolle wechseln',
     roleSettingsLabelText: 'Rolle',
     settingsTitleDom: 'Aufgaben verwalten',
     settingsSubDom: 'Hinzufügen, bearbeiten, löschen',
@@ -1380,6 +1392,12 @@ const I18N = {
     roleChangeSub: 'This device: ',
     roleSubLocked: 'Only the Dom can manage tasks and points.',
     roleReportHint: 'Tap to report as done',
+    rolePinTip: 'Tip: set a PIN below so only you can change roles.',
+    rolePartnerIsDom: 'Your partner is already the Dom — choose Sub.',
+    roleNoDom: 'No Dom in this pairing yet. One device should take the Dom role so tasks can be managed.',
+    roleBecomeDom: 'Switch to Dom role',
+    roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
+    roleBecomeSub: 'Switch to Sub role',
     roleSettingsLabelText: 'Role',
     settingsTitleDom: 'Manage tasks',
     settingsSubDom: 'Add, edit, delete',
@@ -1963,8 +1981,14 @@ function setRole(role) {
 // und fragt sie ab, falls weder lokal noch remote gesetzt (= auch Bestands-Migration).
 function loadRole() {
   if (!currentRef) return;
-  currentRef.child('roles/' + deviceId).on('value', snap => {
-    const remote = snap.val();
+  // Auf ALLE Rollen der Paarung lauschen (nicht nur die eigene), um Fehlzustände
+  // (2× Dom / 2× Sub) zu erkennen und den Auswahl-Screen zu steuern.
+  currentRef.child('roles').on('value', snap => {
+    const roles = snap.val() || {};
+    const others = Object.keys(roles).filter(k => k !== deviceId);
+    window._otherHasDom = others.some(k => roles[k] === 'dom');
+    window._pairHasDom  = Object.keys(roles).some(k => roles[k] === 'dom');
+    const remote = roles[deviceId];
     if (remote === 'dom' || remote === 'sub') {
       if (remote !== currentRole) { currentRole = remote; try { localStorage.setItem('devotion_role', remote); } catch(e) {} }
       applyRoleUI();
@@ -1985,15 +2009,45 @@ function showRoleSelect() {
   set('roleDomTitle','roleDomTitle'); set('roleDomDesc','roleDomDesc');
   set('roleSubTitle','roleSubTitle'); set('roleSubDesc','roleSubDesc');
   set('roleSelHint','roleSelHint');
+  // Verhindert 2× Dom: ist der Partner schon Dom, Dom-Option sperren + Hinweis zeigen
+  const domOpt = document.getElementById('roleOptDom');
+  const partnerHint = document.getElementById('rolePartnerHint');
+  if (window._otherHasDom) {
+    if (domOpt) { domOpt.disabled = true; domOpt.style.opacity = '0.4'; domOpt.style.pointerEvents = 'none'; }
+    if (partnerHint) { partnerHint.style.display = ''; partnerHint.textContent = t('rolePartnerIsDom'); }
+  } else {
+    if (domOpt) { domOpt.disabled = false; domOpt.style.opacity = ''; domOpt.style.pointerEvents = ''; }
+    if (partnerHint) partnerHint.style.display = 'none';
+  }
   el.classList.remove('hidden');
 }
 function chooseRole(role) {
+  // Verhindert 2× Dom: in der Paarung gibt es bereits einen anderen Dom
+  if (role === 'dom' && window._otherHasDom) {
+    const ph = document.getElementById('rolePartnerHint');
+    if (ph) { ph.style.display = ''; ph.textContent = t('rolePartnerIsDom'); }
+    return;
+  }
+  // Schutz: Hochstufen zu Dom verlangt den PIN (sofern gesetzt). Sub kennt ihn nicht →
+  // kann sich nicht selbst befördern. Greift bei JEDER Dom-Wahl (auch nach localStorage-Reset).
+  if (role === 'dom' && currentRole !== 'dom' && hasPinSet()) {
+    openPinModal('roleupgrade');
+    return;
+  }
+  applyChosenRole(role);
+}
+function applyChosenRole(role) {
   setRole(role);
   const el = document.getElementById('roleSelectScreen');
   if (el) el.classList.add('hidden');
   if (typeof render === 'function') render();
 }
 function openRoleChange() { showRoleSelect(); } // Rolle nachträglich ändern
+// Ein-Klick-Korrektur aus einem Fehlzustand (2× Sub → Dom werden; 2× Dom → Sub werden)
+function roleStateAction() {
+  if (window._roleStateTarget === 'dom') openRoleChange();
+  else if (window._roleStateTarget === 'sub') applyChosenRole('sub');
+}
 
 // Setzt die rollenabhängige UI durch: body-Klasse (CSS-Sperren), Badge, Header-Edit.
 function applyRoleUI() {
@@ -2030,6 +2084,24 @@ function applyRoleUI() {
   }
   const rcb = document.getElementById('roleChangeBtn'); if (rcb) rcb.textContent = t('roleChange');
   const rsl = document.getElementById('roleSettingsLabel'); if (rsl) rsl.textContent = t('roleSettingsLabelText');
+  // Hinweis für Dom ohne PIN: ohne PIN greift der Rollenschutz nicht
+  const tip = document.getElementById('rolePinTip');
+  if (tip) { const show = isDom() && !hasPinSet(); tip.style.display = show ? '' : 'none'; if (show) tip.textContent = t('rolePinTip'); }
+  // Fehlzustand-Hinweis mit Ein-Klick-Korrektur: 2× Sub (kein Dom) bzw. 2× Dom (kein Sub)
+  const warn = document.getElementById('roleStateWarn');
+  if (warn) {
+    const txt = document.getElementById('roleStateText');
+    const btn = document.getElementById('roleStateBtn');
+    if (isSub() && window._pairHasDom === false) {
+      warn.style.display = ''; if (txt) txt.textContent = t('roleNoDom');
+      if (btn) { btn.style.display = ''; btn.textContent = t('roleBecomeDom'); } window._roleStateTarget = 'dom';
+    } else if (isDom() && window._otherHasDom) {
+      warn.style.display = ''; if (txt) txt.textContent = t('roleTwoDom');
+      if (btn) { btn.style.display = ''; btn.textContent = t('roleBecomeSub'); } window._roleStateTarget = 'sub';
+    } else {
+      warn.style.display = 'none'; if (btn) btn.style.display = 'none';
+    }
+  }
 
   if (typeof render === 'function' && document.getElementById('taskList')) render();
 }
@@ -3690,6 +3762,16 @@ async function submitPin(entered) {
     if (await verifyPin(entered)) {
       closePinModal();
       doShowSettings();
+    } else {
+      document.getElementById('pinError').textContent = t('pinWrong');
+      for (let i = 1; i <= 4; i++) { document.getElementById('pin' + i).value = ''; }
+      document.getElementById('pin1').focus();
+    }
+  } else if (pinMode === 'roleupgrade') {
+    // Rollenwechsel zu Dom: nur mit korrektem PIN
+    if (await verifyPin(entered)) {
+      closePinModal();
+      applyChosenRole('dom');
     } else {
       document.getElementById('pinError').textContent = t('pinWrong');
       for (let i = 1; i <= 4; i++) { document.getElementById('pin' + i).value = ''; }
