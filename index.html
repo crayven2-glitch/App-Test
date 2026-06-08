@@ -598,7 +598,10 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     </button>
   </div>
   <p class="role-hint" id="roleSelHint">Du kannst das später in den Einstellungen ändern.</p>
-  <a id="roleSelectBackLink" onclick="roleSelectBack()" style="display:inline-block;margin-top:8px;color:var(--text2);font-size:13px;text-decoration:underline;cursor:pointer;">Anderen Code verwenden</a>
+  <div style="display:flex;gap:18px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+    <a id="roleSelectCancelLink" onclick="roleSelectCancel()" style="display:none;color:var(--accent);font-size:13px;text-decoration:underline;cursor:pointer;">Abbrechen</a>
+    <a id="roleSelectBackLink" onclick="roleSelectBack()" style="color:var(--text2);font-size:13px;text-decoration:underline;cursor:pointer;">Anderen Code verwenden</a>
+  </div>
 </div>
 
 <!-- PRICING SCREEN -->
@@ -913,14 +916,16 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     </div>
   </div>
   </div><!-- /dom-only -->
-  <div class="lang-card">
-    <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="roleSettingsLabel">Rolle</span></div>
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span id="roleSettingsValue" class="role-badge">—</span>
-      <button class="notif-btn dom-only" id="roleChangeBtn" onclick="openRoleChange()">Ändern</button>
+  <div class="lang-card" style="flex-direction:column;align-items:stretch;gap:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="roleSettingsLabel">Rolle</span></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <span id="roleSettingsValue" class="role-badge">—</span>
+        <button class="notif-btn dom-only" id="roleChangeBtn" onclick="openRoleChange()" style="white-space:nowrap;">Ändern</button>
+      </div>
     </div>
-    <div class="dom-only" id="rolePinTip" style="display:none;font-size:11px;color:var(--text2);margin-top:8px;line-height:1.4;"></div>
-    <div id="roleStateWarn" style="display:none;margin-top:8px;">
+    <div class="dom-only" id="rolePinTip" style="display:none;font-size:11px;color:var(--text2);line-height:1.4;"></div>
+    <div id="roleStateWarn" style="display:none;">
       <div id="roleStateText" style="font-size:11px;color:var(--yellow);line-height:1.4;margin-bottom:6px;"></div>
       <button class="notif-btn" id="roleStateBtn" style="display:none" onclick="roleStateAction()">—</button>
     </div>
@@ -1126,7 +1131,7 @@ const I18N = {
     roleSelHint: 'Du kannst das später in den Einstellungen ändern.',
     roleDomShort: 'Dom',
     roleSubShort: 'Sub',
-    roleChange: 'Rolle ändern',
+    roleChange: 'Ändern',
     roleChangeSub: 'Dieses Gerät: ',
     roleSubLocked: 'Nur der Dom kann Aufgaben und Punkte verwalten.',
     roleReportHint: 'Tippen, um Erledigung zu melden',
@@ -1136,6 +1141,7 @@ const I18N = {
     roleSwapHint: 'Wählst du die Rolle deines Partners, tauscht ihr beide.',
     rolePairFull: 'Diese Paarung hat schon Dom und Sub. Wählst du eine Rolle, ersetzt du das bisherige Gerät.',
     roleSelectBackLabel: 'Anderen Code verwenden',
+    roleSelectCancelLabel: 'Abbrechen',
     roleNoDom: 'Noch kein Dom in dieser Paarung. Damit jemand Aufgaben verwalten kann, sollte eines der Geräte die Dom-Rolle übernehmen.',
     roleBecomeDom: 'Zur Dom-Rolle wechseln',
     roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
@@ -1393,7 +1399,7 @@ const I18N = {
     roleSelHint: 'You can change this later in settings.',
     roleDomShort: 'Dom',
     roleSubShort: 'Sub',
-    roleChange: 'Change role',
+    roleChange: 'Change',
     roleChangeSub: 'This device: ',
     roleSubLocked: 'Only the Dom can manage tasks and points.',
     roleReportHint: 'Tap to report as done',
@@ -1403,6 +1409,7 @@ const I18N = {
     roleSwapHint: 'Pick your partner\'s role and you\'ll both swap.',
     rolePairFull: 'This pairing already has a Dom and a Sub. Picking a role replaces that device.',
     roleSelectBackLabel: 'Use a different code',
+    roleSelectCancelLabel: 'Cancel',
     roleNoDom: 'No Dom in this pairing yet. One device should take the Dom role so tasks can be managed.',
     roleBecomeDom: 'Switch to Dom role',
     roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
@@ -2040,6 +2047,8 @@ function showRoleSelect() {
   else if (isInitial && window._otherHasSub) hint = t('rolePartnerIsSub');
   else if (!isInitial && (window._otherHasDom || window._otherHasSub)) hint = t('roleSwapHint');
   const backLink = document.getElementById('roleSelectBackLink'); if (backLink) backLink.textContent = t('roleSelectBackLabel');
+  const cancelLink = document.getElementById('roleSelectCancelLink');
+  if (cancelLink) { cancelLink.style.display = currentRole ? '' : 'none'; cancelLink.textContent = t('roleSelectCancelLabel'); }
   if (partnerHint) { partnerHint.style.display = hint ? '' : 'none'; partnerHint.textContent = hint; }
   el.classList.remove('hidden');
 }
@@ -2098,6 +2107,10 @@ function roleSelectBack() {
   syncCode = null;
   try { localStorage.removeItem('pflichten_sync_code_2'); } catch(e) {}
   const setup = document.getElementById('setupScreen'); if (setup) setup.classList.remove('hidden');
+}
+// Wechsel abbrechen: Auswahl schließen, zurück zur App (Rolle bleibt unverändert)
+function roleSelectCancel() {
+  const el = document.getElementById('roleSelectScreen'); if (el) el.classList.add('hidden');
 }
 
 // Setzt die rollenabhängige UI durch: body-Klasse (CSS-Sperren), Badge, Header-Edit.
