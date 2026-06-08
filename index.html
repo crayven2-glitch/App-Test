@@ -1198,6 +1198,7 @@ const I18N = {
     setupOr: 'oder',
     setupGenerate: 'Neuen Code generieren',
     setupMinChars: 'Mindestens 4 Zeichen eingeben.',
+    setupNewCodeMin6: 'Für eine neue Paarung bitte mindestens 6 Zeichen (oder „Neuen Code generieren" nutzen).',
     setupPlaceholder: 'Code',
     defaultTitle: 'Meine Aufgaben',
     defaultSub: 'Tippen zum Bearbeiten',
@@ -1473,6 +1474,7 @@ const I18N = {
     setupOr: 'or',
     setupGenerate: 'Generate new code',
     setupMinChars: 'Enter at least 4 characters.',
+    setupNewCodeMin6: 'For a new pairing, use at least 6 characters (or tap "Generate new code").',
     setupPlaceholder: 'Code',
     defaultTitle: 'My Duties',
     defaultSub: 'Tap to edit',
@@ -1992,6 +1994,22 @@ function connectWithCode() {
   const raw = document.getElementById('setupCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if (raw.length < 4) { document.getElementById('setupError').textContent = t('setupMinChars'); return; }
   document.getElementById('setupError').textContent = '';
+  // Neue Paarungen brauchen mind. 6 Zeichen (Schutz vor rat-/kollisionsanfälligen Kurzcodes).
+  // Bestehende Codes jeder Länge bleiben nutzbar; bei Netzproblemen nicht aussperren.
+  if (raw.length < 6) {
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      let done = false;
+      const go = () => { if (!done) { done = true; initSync(raw); } };
+      const timer = setTimeout(go, 2500);
+      firebase.database().ref('pflichten/' + raw).once('value', snap => {
+        if (done) return; clearTimeout(timer);
+        if (!snap.exists()) { done = true; document.getElementById('setupError').textContent = t('setupNewCodeMin6'); }
+        else { done = true; initSync(raw); }
+      }, () => { if (!done) { clearTimeout(timer); go(); } });
+    } catch(e) { initSync(raw); }
+    return;
+  }
   initSync(raw);
 }
 
@@ -4941,6 +4959,7 @@ function finishOnboarding() {
   localStorage.setItem('devotion_onboarded', '1');
   document.getElementById('onboardScreen2').classList.add('hidden');
   document.getElementById('setupScreen').classList.remove('hidden');
+  if (!document.getElementById('setupCodeInput').value.trim()) generateCode(); // sicheren Code vorschlagen (überschreibbar)
 }
 
 // ── Language Select ──
@@ -4965,6 +4984,7 @@ if (savedCode) {
   document.getElementById('langSelectScreen').classList.add('hidden');
   document.getElementById('ageCheckScreen').classList.add('hidden');
   document.getElementById('setupScreen').classList.remove('hidden');
+  if (!document.getElementById('setupCodeInput').value.trim()) generateCode(); // sicheren Code vorschlagen (überschreibbar)
 } else if (langSelected) {
   document.getElementById('langSelectScreen').classList.add('hidden');
   document.getElementById('ageCheckScreen').classList.remove('hidden');
