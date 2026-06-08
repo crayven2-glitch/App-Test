@@ -597,6 +597,20 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
       </span>
     </button>
   </div>
+  <div style="display:flex;align-items:center;gap:10px;width:100%;max-width:380px;margin:8px auto;">
+    <div style="flex:1;height:0.5px;background:rgba(255,255,255,.13);"></div>
+    <span style="color:var(--text2);font-size:11px;">oder</span>
+    <div style="flex:1;height:0.5px;background:rgba(255,255,255,.13);"></div>
+  </div>
+  <div class="role-options">
+    <button type="button" id="roleOptNone" class="role-option" onclick="chooseRole('none')" style="border-left:4px solid #6b7280;">
+      <span class="role-option-badge" style="background:#2a2f4a;color:#bbb;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span class="role-option-text">
+        <span class="role-option-title" id="roleNoneTitle">Ohne feste Rollen</span>
+        <span class="role-option-desc" id="roleNoneDesc">Wir teilen uns alles — beide gleichberechtigt.</span>
+      </span>
+    </button>
+  </div>
   <p class="role-hint" id="roleSelHint">Du kannst das später in den Einstellungen ändern.</p>
   <div style="display:flex;gap:18px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
     <a id="roleSelectCancelLink" onclick="roleSelectCancel()" style="display:none;color:var(--accent);font-size:13px;text-decoration:underline;cursor:pointer;">Abbrechen</a>
@@ -1142,6 +1156,10 @@ const I18N = {
     rolePairFull: 'Diese Paarung hat schon Dom und Sub. Wählst du eine Rolle, ersetzt du das bisherige Gerät.',
     roleSelectBackLabel: 'Anderen Code verwenden',
     roleSelectCancelLabel: 'Abbrechen',
+    roleNoneTitle: 'Ohne feste Rollen',
+    roleNoneDesc: 'Wir teilen uns alles — beide gleichberechtigt.',
+    roleNoneLabel: 'Keine Rollen',
+    roleSetup: 'Rollen einrichten',
     roleNoDom: 'Noch kein Dom in dieser Paarung. Damit jemand Aufgaben verwalten kann, sollte eines der Geräte die Dom-Rolle übernehmen.',
     roleBecomeDom: 'Zur Dom-Rolle wechseln',
     roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
@@ -1410,6 +1428,10 @@ const I18N = {
     rolePairFull: 'This pairing already has a Dom and a Sub. Picking a role replaces that device.',
     roleSelectBackLabel: 'Use a different code',
     roleSelectCancelLabel: 'Cancel',
+    roleNoneTitle: 'No fixed roles',
+    roleNoneDesc: 'We share everything — both equal.',
+    roleNoneLabel: 'No roles',
+    roleSetup: 'Set up roles',
     roleNoDom: 'No Dom in this pairing yet. One device should take the Dom role so tasks can be managed.',
     roleBecomeDom: 'Switch to Dom role',
     roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
@@ -1988,7 +2010,7 @@ function isDom() { return currentRole === 'dom'; }
 function isSub() { return currentRole === 'sub'; }
 
 function setRole(role) {
-  if (role !== 'dom' && role !== 'sub') return;
+  if (role !== 'dom' && role !== 'sub' && role !== 'none') return;
   currentRole = role;
   saveLocalRole(syncCode, role); // pro Paarung speichern, nicht global
   if (db && syncCode) db.ref('pflichten/' + syncCode + '/roles/' + deviceId).set(role);
@@ -2010,7 +2032,7 @@ function loadRole() {
     window._otherHasSub = others.some(k => roles[k] === 'sub');
     window._pairHasDom  = Object.keys(roles).some(k => roles[k] === 'dom');
     const remote = roles[deviceId];
-    if (remote === 'dom' || remote === 'sub') {
+    if (remote === 'dom' || remote === 'sub' || remote === 'none') {
       if (remote !== currentRole) { currentRole = remote; saveLocalRole(syncCode, remote); }
       applyRoleUI();
     } else if (!currentRole) {
@@ -2029,6 +2051,7 @@ function showRoleSelect() {
   set('roleSelTitle','roleSelTitle'); set('roleSelDesc','roleSelDesc');
   set('roleDomTitle','roleDomTitle'); set('roleDomDesc','roleDomDesc');
   set('roleSubTitle','roleSubTitle'); set('roleSubDesc','roleSubDesc');
+  set('roleNoneTitle','roleNoneTitle'); set('roleNoneDesc','roleNoneDesc');
   set('roleSelHint','roleSelHint');
   const domOpt = document.getElementById('roleOptDom');
   const subOpt = document.getElementById('roleOptSub');
@@ -2077,7 +2100,7 @@ function chooseRole(role) {
 function applyChosenRole(role) {
   // Tausch: wechsle ich (mit bestehender Rolle) zu einer Rolle, die der Partner belegt,
   // bekommt der Partner meine bisherige Rolle — so bleibt es bei 1× Dom + 1× Sub.
-  if (currentRole && currentRole !== role && db && syncCode) {
+  if (currentRole && currentRole !== role && (role === 'dom' || role === 'sub') && db && syncCode) {
     const roles = window._pairRoles || {};
     for (const dev of Object.keys(roles)) {
       if (dev !== deviceId && roles[dev] === role) {
@@ -2121,7 +2144,7 @@ function applyRoleUI() {
   // Rollen-Badge im Wochen-Header
   const badge = document.getElementById('roleBadge');
   if (badge) {
-    if (currentRole) {
+    if (currentRole === 'dom' || currentRole === 'sub') {
       badge.style.display = '';
       badge.textContent = isDom() ? t('roleDomShort') : t('roleSubShort');
       badge.className = 'role-badge ' + (isDom() ? 'role-badge-dom' : 'role-badge-sub');
@@ -2143,10 +2166,10 @@ function applyRoleUI() {
   if (sSub) sSub.textContent = isSub() ? t('roleSubLocked') : t('settingsSubDom');
   const rsv = document.getElementById('roleSettingsValue');
   if (rsv) {
-    rsv.textContent = currentRole ? (isDom() ? t('roleDomShort') : t('roleSubShort')) : '—';
+    rsv.textContent = (currentRole === 'dom' || currentRole === 'sub') ? (isDom() ? t('roleDomShort') : t('roleSubShort')) : (currentRole === 'none' ? t('roleNoneLabel') : '—');
     rsv.className = 'role-badge ' + (isDom() ? 'role-badge-dom' : isSub() ? 'role-badge-sub' : '');
   }
-  const rcb = document.getElementById('roleChangeBtn'); if (rcb) rcb.textContent = t('roleChange');
+  const rcb = document.getElementById('roleChangeBtn'); if (rcb) rcb.textContent = currentRole === 'none' ? t('roleSetup') : t('roleChange');
   const rsl = document.getElementById('roleSettingsLabel'); if (rsl) rsl.textContent = t('roleSettingsLabelText');
   // Hinweis für Dom ohne PIN: ohne PIN greift der Rollenschutz nicht
   const tip = document.getElementById('rolePinTip');
@@ -2168,6 +2191,26 @@ function applyRoleUI() {
   }
 
   if (typeof render === 'function' && document.getElementById('taskList')) render();
+}
+
+// Wiederherstellung: ist der Server-Knoten leer ODER ohne Aufgaben (z.B. nach versehentlichem
+// Löschen + Neu-Anlage durch den Partner), aber dieses Gerät hat noch einen lokalen Stand
+// (localStorage), spiele ihn zurück nach Firebase. Sicheres Netz für alle Nutzer.
+function restoreFromLocalIfAny(code) {
+  try {
+    const lt = localStorage.getItem('pflichten_tasks_' + code);
+    if (!lt) return false;
+    const localTasks = JSON.parse(lt);
+    if (!Array.isArray(localTasks) || localTasks.length === 0) return false;
+    const lw = localStorage.getItem('pflichten_week_' + code);
+    tasks = localTasks;
+    weekData = lw ? JSON.parse(lw) : {};
+    if (typeof normalizeWeekData === 'function') normalizeWeekData();
+    render();
+    saveData(); // lokalen Stand zurück nach Firebase schreiben
+    console.log('Wiederherstellung: lokalen Stand zurückgespielt (' + localTasks.length + ' Aufgaben)');
+    return true;
+  } catch(e) { console.error('Wiederherstellung fehlgeschlagen:', e); return false; }
 }
 
 // ── FIREBASE ──
@@ -2207,7 +2250,12 @@ function initSync(code) {
   currentRef.on('value', (snapshot) => {
     if (localWriting) return;
     const data = snapshot.val();
-    if (data) {
+    // Server ohne Aufgaben (leer ODER nur Basis-Felder nach versehentlichem Löschen)? Dann erst
+    // den lokalen Stand dieses Geräts zurückspielen, falls vorhanden.
+    const serverHasTasks = data && data.tasks && (Array.isArray(data.tasks) ? data.tasks.length > 0 : Object.keys(data.tasks).length > 0);
+    if (!serverHasTasks && restoreFromLocalIfAny(code)) {
+      // lokalen Stand wiederhergestellt + nach Firebase zurückgeschrieben
+    } else if (data) {
       // BUGFIX 5.6.2026: Während die Einstellungen offen sind, KEINE Sync-Daten anwenden —
       // sonst überschreibt ein eingehender Snapshot (z.B. Partner-Aktivität) die lokale
       // Aufgabenliste und ungespeicherte/neue Aufgaben verschwinden mitten beim Tippen.
