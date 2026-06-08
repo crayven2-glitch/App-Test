@@ -2636,7 +2636,7 @@ function render() {
           ${proofHtml}
         </div>
         ${proofBtn}
-        <button class="task-status ${status}" title="${isSub() ? t('roleReportHint') : ''}" onclick="event.stopPropagation();cycleStatus(${tk.id})">${icon}</button>
+        <button class="task-status ${status}" onclick="event.stopPropagation();cycleStatus(${tk.id})">${icon}</button>
       </div>`;
     list.appendChild(div);
   });
@@ -3008,16 +3008,12 @@ function cycleStatus(taskId) {
   if (!weekData[key].days[selectedDay]) weekData[key].days[selectedDay] = {};
   const current = weekData[key].days[selectedDay][taskId] || '';
   let next;
-  if (isSub()) {
-    // Sub meldet nur Erledigung — neutraler Status, KEINE Punkte (der Dom bewertet)
-    next = (current === 'reported') ? '' : 'reported';
-  } else {
-    // Dom bewertet: '' → done → missed → na. Eine Sub-Meldung ('reported') wird zu 'done' bewertet.
-    const cycle = ['','done','missed','na'];
-    let idx = cycle.indexOf(current);
-    if (idx === -1) idx = 0; // 'reported' o.ä. wie '' behandeln → nächster Schritt 'done'
-    next = cycle[(idx+1) % cycle.length];
-  }
+  // Dom UND Sub bewerten gleich: '' → done → missed → na (mit Punkten).
+  // Alte Sub-Meldungen ('reported') werden wie '' behandelt → nächster Schritt 'done'.
+  const cycle = ['','done','missed','na'];
+  let idx = cycle.indexOf(current);
+  if (idx === -1) idx = 0;
+  next = cycle[(idx+1) % cycle.length];
   if (next === '') delete weekData[key].days[selectedDay][taskId];
   else weekData[key].days[selectedDay][taskId] = next;
   // Track last status change for detailed push
