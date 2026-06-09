@@ -717,6 +717,8 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
   <div class="day-tabs" id="dayTabs"></div>
   <div class="task-list" id="taskList"></div>
+  <!-- MEHR-HERREN Baustein 4: Sub-Hub (Variante A — eigener Bereich, nach Herr gruppiert, read-only) -->
+  <div id="subHubSection" style="display:none;padding:0 16px 4px;"></div>
   <div class="remarks-area">
     <label id="remarksLabel">Bemerkung zum Tag</label>
     <textarea id="remarks" placeholder="Optionale Bemerkung zum Tag..." oninput="saveRemarks()"></textarea>
@@ -1196,6 +1198,10 @@ const I18N = {
     mhStatus_active: 'Aktiv',
     mhStatus_blocked: 'Pausiert',
     mhStatus_ended: 'Beendet',
+    mhHubTitle: 'Aufgaben von deinen weiteren Herren',
+    mhHubActive: 'aktiv',
+    mhHubNoTasksToday: 'Heute keine Aufgabe von diesem Herrn.',
+    mhHubWaiting: 'Dieser Herr hat noch keine Aufgaben angelegt.',
     rolePremiumLocked: 'Premium-Feature',
     roleChangePremium: 'In Premium',
     settingsTitleDom: 'Aufgaben verwalten',
@@ -1493,6 +1499,10 @@ const I18N = {
     mhStatus_active: 'Active',
     mhStatus_blocked: 'Paused',
     mhStatus_ended: 'Ended',
+    mhHubTitle: 'Tasks from your other masters',
+    mhHubActive: 'active',
+    mhHubNoTasksToday: 'No task from this master today.',
+    mhHubWaiting: 'This master has not created any tasks yet.',
     rolePremiumLocked: 'Premium feature',
     roleChangePremium: 'Get Premium',
     settingsTitleDom: 'Manage tasks',
@@ -2151,6 +2161,102 @@ function joinAsNebenherr() {
   }, () => { document.getElementById('setupError').textContent = t('mhStrandNotFound'); });
 }
 
+// ── MEHR-HERREN Baustein 4: Sub-Hub (Variante A) ──
+// Die Sub der Hauptpaarung abonniert alle AKTIVEN Neben-Stränge und zeigt deren Aufgaben
+// read-only in einem eigenen Bereich, gruppiert + beschriftet „von Herr X". Der bestehende
+// Wochen-Render bleibt unberührt. Erledigung/Nachweis-Rücklauf folgt in Baustein 6.
+window._strandData = window._strandData || {};          // strandId -> Strang-Snapshot (tasks/weekData/herrName/status)
+window._strandListeners = window._strandListeners || {}; // strandId -> Firebase-Ref (für .off())
+const MH_HUB_COLORS = ['#e94560','#f0c040','#6c8cff','#4ecca3','#c879ff','#ff9f45'];
+
+// Nur die Sub der Hauptpaarung sieht den Hub (ein Nebenherr/Hauptherr nicht).
+function subHubEligible() { return isSub() && !window._isNebenherr; }
+
+// Tag-Filter gespiegelt aus isTaskActiveOnDay, aber auf Strang-Tasks statt den Globals.
+function mhTaskActiveOnDay(task, dayIndex) {
+  if (!task || !task.days || task.days.length === 0) return true;
+  return task.days.includes(dayIndex);
+}
+
+// Abos an die aktuell AKTIVEN Stränge angleichen (an-/abmelden) — idempotent, beliebig oft aufrufbar.
+function syncStrandSubscriptions() {
+  if (!db) return;
+  if (!subHubEligible()) { // Rolle wechselte weg von Sub / Nebenherr / Logout → alle Abos lösen
+    Object.keys(window._strandListeners).forEach(id => { try { window._strandListeners[id].off(); } catch(e){} });
+    window._strandListeners = {}; window._strandData = {};
+    renderSubHub();
+    return;
+  }
+  const activeIds = strandList().filter(s => s.status === 'active').map(s => s.strandId);
+  const activeSet = {}; activeIds.forEach(id => { activeSet[id] = true; });
+  // Abmelden, was nicht mehr aktiv ist
+  Object.keys(window._strandListeners).forEach(id => {
+    if (!activeSet[id]) { try { window._strandListeners[id].off(); } catch(e){} delete window._strandListeners[id]; delete window._strandData[id]; }
+  });
+  // Neue aktive Stränge abonnieren
+  activeIds.forEach(id => {
+    if (window._strandListeners[id]) return;
+    const ref = db.ref('strands/' + id);
+    window._strandListeners[id] = ref;
+    ref.on('value', snap => {
+      const v = snap.val() || {};
+      v.strandId = id;
+      window._strandData[id] = v;
+      renderSubHub();
+    }, () => {});
+  });
+  renderSubHub();
+}
+
+// Read-only Merge-Ansicht: pro aktivem Strang eine Gruppe mit den Aufgaben des gewählten Tages.
+function renderSubHub() {
+  const el = document.getElementById('subHubSection');
+  if (!el) return;
+  if (!subHubEligible()) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const strands = strandList().filter(s => s.status === 'active');
+  if (!strands.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const weekKey = getWeekKey(currentWeekOffset);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let html = '<div style="font-size:12px;color:var(--text2);margin:14px 2px 8px;display:flex;align-items:center;gap:6px;font-weight:600;">'
+    + '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> '
+    + esc(t('mhHubTitle')) + '</div>';
+  strands.forEach((s, idx) => {
+    const data = window._strandData[s.strandId];
+    const color = MH_HUB_COLORS[idx % MH_HUB_COLORS.length];
+    const name = (data && data.herrName) || s.herrName || t('mhUnnamedHerr');
+    html += '<div style="margin:0 0 5px;display:flex;align-items:center;gap:7px;">'
+      + '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;"></span>'
+      + '<span style="font-size:13px;font-weight:600;">' + esc(name) + '</span>'
+      + '<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:rgba(78,204,163,.18);color:var(--green);">' + esc(t('mhHubActive')) + '</span></div>';
+    if (!data) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">…</div>'; return; }
+    const stasks = Array.isArray(data.tasks) ? data.tasks : (data.tasks ? Object.values(data.tasks) : []);
+    if (!stasks.length) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">' + esc(t('mhHubWaiting')) + '</div>'; return; }
+    const swd = (data.weekData && data.weekData[weekKey]) ? data.weekData[weekKey] : { days:{} };
+    const dayEntries = (swd.days && (swd.days[selectedDay] || swd.days[String(selectedDay)])) || {};
+    const dayTasks = stasks.filter(tk => mhTaskActiveOnDay(tk, selectedDay));
+    if (!dayTasks.length) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">' + esc(t('mhHubNoTasksToday')) + '</div>'; return; }
+    html += '<div style="margin:0 0 12px;">';
+    dayTasks.forEach(tk => {
+      const status = dayEntries[tk.id] || dayEntries[String(tk.id)] || '';
+      const done = status === 'done' || status === 'reported';
+      const missed = status === 'missed';
+      const dot = done
+        ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+        : missed
+          ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+          : '';
+      const ring = done ? 'var(--green)' : missed ? 'var(--red)' : '#2c3a5e';
+      html += '<div style="background:var(--surface);border-radius:10px;border-left:3px solid ' + color + ';margin-bottom:6px;padding:8px 11px;display:flex;align-items:center;gap:10px;">'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:12.5px;">' + esc(tk.name) + '</div>'
+        + '<div style="font-size:10px;color:var(--text2);margin-top:2px;">+' + (tk.plus||0) + ' / -' + (tk.minus||0) + '</div></div>'
+        + '<div style="width:24px;height:24px;border-radius:50%;border:2px solid ' + ring + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + dot + '</div></div>';
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+  el.style.display = '';
+}
+
 function setRole(role) {
   if (role !== 'dom' && role !== 'sub' && role !== 'none') return;
   currentRole = role;
@@ -2368,6 +2474,7 @@ function applyRoleUI() {
     }
   }
 
+  if (typeof syncStrandSubscriptions === 'function') syncStrandSubscriptions(); // B4: bei Rollenwechsel Hub-Abos angleichen
   if (typeof render === 'function' && document.getElementById('taskList')) render();
 }
 
@@ -2434,6 +2541,7 @@ function initSync(code, opts) {
     window._rolesSince = (data && data.rolesSince) ? data.rolesSince : null;
     window._strandRegistry = (data && data.strandRegistry) ? data.strandRegistry : {}; // Mehr-Herren: Liste der Neben-Stränge
     if (typeof updateMehrHerrenUI === 'function') updateMehrHerrenUI();
+    if (typeof syncStrandSubscriptions === 'function') syncStrandSubscriptions(); // B4: Sub abonniert aktive Stränge
     // Server ohne Aufgaben (leer ODER nur Basis-Felder nach versehentlichem Löschen)? Dann erst
     // den lokalen Stand dieses Geräts zurückspielen, falls vorhanden.
     const serverHasTasks = data && data.tasks && (Array.isArray(data.tasks) ? data.tasks.length > 0 : Object.keys(data.tasks).length > 0);
@@ -2778,6 +2886,7 @@ function render() {
   document.getElementById('remarks').value = dayRemark;
   updateScores();
   renderFeedback();
+  if (typeof renderSubHub === 'function') renderSubHub(); // B4: Hub folgt Tag-/Wochenwahl
 }
 
 function updateScores() {
@@ -5056,7 +5165,7 @@ function refreshAdsState() {
 // ── INIT ──
 // ── SERVICE WORKER ──
 if ('serviceWorker' in navigator) {
-  Promise.reject('SW im Test deaktiviert').catch(e => console.log('SW:', e));
+  /* TEST-BUILD: Service Worker deaktiviert */
 }
 
 applyLanguage();
