@@ -2678,7 +2678,9 @@ function mhEnforceStrandPremium(isPrem) {
   if (!ov) return;
   const status = window._strandStatus;
   const locked = (status === 'blocked' || status === 'ended');
-  if (!isPrem && !locked) {
+  const ps = document.getElementById('pricingScreen');
+  const pricingOpen = !!ps && !ps.classList.contains('hidden'); // B7: solange die Abo-Auswahl offen ist, Gate NICHT überlagern
+  if (!isPrem && !locked && !pricingOpen) {
     const tEl = document.getElementById('mhStrandGateTitle'); if (tEl) tEl.textContent = t('mhStrandGateTitle');
     const bEl = document.getElementById('mhStrandGateBody'); if (bEl) bEl.textContent = t('mhStrandGateBody');
     const btn = document.getElementById('mhStrandGateBtn'); if (btn) btn.textContent = t('mhStrandGateBtn');
@@ -5131,6 +5133,7 @@ function showPricing() {
   if (window._isNebenherr) {
     if (basicCard) basicCard.style.display = 'none';
     if (descEl) descEl.textContent = t('mhStrandPremNote');
+    const g = document.getElementById('mhStrandPremiumGate'); if (g) g.classList.remove('open'); // B7: Gate ausblenden, solange die Abo-Auswahl offen ist
   } else {
     if (basicCard) basicCard.style.display = '';
   }
@@ -5141,6 +5144,8 @@ function showPricing() {
 
 function closePricing() {
   document.getElementById('pricingScreen').classList.add('hidden');
+  // B7: Geht der Nebenherr ohne Kauf zurück, das Gate wieder zeigen (bleibt gated bis Premium).
+  if (window._isNebenherr && typeof mhSyncStrandPremium === 'function') mhSyncStrandPremium();
 }
 
 async function startCheckout(plan) {
