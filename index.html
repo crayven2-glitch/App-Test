@@ -2908,7 +2908,12 @@ function domSubBackToStart() {
 function domSubUnlock() {
   if (!db || !syncCode || !window._isDomTab) return;
   try { db.ref('strands/' + syncCode + '/status').set('active'); } catch(e){}
-  try { if (window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/subs/' + syncCode + '/status').set('active'); } catch(e){}
+  // Test-Freischaltung → Premium für diese Beziehung (manuell; später durch den echten Add-on-Kauf ersetzt).
+  try { db.ref('strands/' + syncCode + '/subscription').set({ manual: true, plan: 'premium', status: 'active' }); } catch(e){}
+  try { if (window._domMainCode) {
+    db.ref('pflichten/' + window._domMainCode + '/subs/' + syncCode + '/status').set('active');
+    db.ref('pflichten/' + window._domMainCode + '/subs/' + syncCode + '/premium').set(true);
+  } } catch(e){}
   const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
 }
 
