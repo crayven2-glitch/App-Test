@@ -558,6 +558,8 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   <button class="setup-btn" onclick="connectWithCode()">Einloggen</button>
   <div class="setup-divider">oder</div>
   <button class="setup-btn-sec" onclick="generateCode()">Neuen Code generieren</button>
+  <!-- MEHR-HERREN: Nebenherr-Name (versteckt, blendet beim Beitritt ein) -->
+  <input class="setup-input" id="herrNameInput" type="text" placeholder="Dein Name (für die Sub sichtbar)" maxlength="24" autocomplete="off" style="display:none;margin-top:4px;">
   <button class="setup-btn-sec" id="joinHerrBtn" onclick="joinAsNebenherr()" style="margin-top:4px;">Als Herr beitreten</button>
   <div style="display:flex;justify-content:center;gap:24px;margin-top:28px;">
     <a href="https://www.instagram.com/devotion.app.official/" target="_blank" rel="noopener" aria-label="Instagram" style="color:var(--text2);display:inline-flex;transition:color .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
@@ -1224,6 +1226,8 @@ const I18N = {
     setupDesc: 'Gib einen gemeinsamen Code ein, damit beide Handys dieselben Daten sehen.',
     setupConnect: 'Einloggen',
     joinHerrBtn: 'Als Herr beitreten',
+    mhJoinConfirm: 'Beitreten bestätigen',
+    herrNamePlaceholder: 'Dein Name (für die Sub sichtbar)',
     mhStrandNotFound: 'Kein Strang mit diesem Code gefunden.',
     mhStrandEnded: 'Dieser Strang wurde beendet.',
     mhStrandCodeLen: 'Bitte den 8-stelligen Strang-Code eingeben.',
@@ -1525,6 +1529,8 @@ const I18N = {
     setupDesc: 'Enter a shared code so both phones see the same data.',
     setupConnect: 'Log in',
     joinHerrBtn: 'Join as master',
+    mhJoinConfirm: 'Confirm join',
+    herrNamePlaceholder: 'Your name (visible to the sub)',
     mhStrandNotFound: 'No strand found for this code.',
     mhStrandEnded: 'This strand has ended.',
     mhStrandCodeLen: 'Please enter the 8-character strand code.',
@@ -1826,6 +1832,8 @@ function applyLanguage() {
   const joinBtn = document.getElementById('joinHerrBtn'); if (joinBtn) joinBtn.textContent = t('joinHerrBtn');
   const setupInput = document.getElementById('setupCodeInput');
   if (setupInput) setupInput.placeholder = t('setupPlaceholder');
+  const herrNameInput = document.getElementById('herrNameInput');
+  if (herrNameInput) herrNameInput.placeholder = t('herrNamePlaceholder');
 
   // Score labels
   document.querySelectorAll('.score-item.score-pos .lbl').forEach(el => el.textContent = t('earned'));
@@ -2148,14 +2156,33 @@ function updateMehrHerrenUI() {
   if (mehrHerrenAvailable()) { card.style.display = ''; renderStrandList(); } else { card.style.display = 'none'; }
 }
 function joinAsNebenherr() {
+  const nameInput = document.getElementById('herrNameInput');
+  // Erststufe: Namensfeld einblenden (progressive disclosure) → erneut tippen schließt den Beitritt ab.
+  if (nameInput && nameInput.style.display === 'none') {
+    nameInput.style.display = '';
+    nameInput.placeholder = t('herrNamePlaceholder');
+    try { nameInput.value = localStorage.getItem('devotion_herr_name') || ''; } catch(e){}
+    nameInput.focus();
+    const jb = document.getElementById('joinHerrBtn'); if (jb) jb.textContent = t('mhJoinConfirm');
+    document.getElementById('setupError').textContent = '';
+    return;
+  }
   const raw = document.getElementById('setupCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if (raw.length < 8) { document.getElementById('setupError').textContent = t('mhStrandCodeLen'); return; }
   document.getElementById('setupError').textContent = '';
+  const herrName = nameInput ? nameInput.value.trim().slice(0, 24) : '';
   try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } catch(e){}
   firebase.database().ref('strands/' + raw).once('value', snap => {
     if (!snap.exists()) { document.getElementById('setupError').textContent = t('mhStrandNotFound'); return; }
-    if ((snap.val() || {}).status === 'ended') { document.getElementById('setupError').textContent = t('mhStrandEnded'); return; }
+    const sv = snap.val() || {};
+    if (sv.status === 'ended') { document.getElementById('setupError').textContent = t('mhStrandEnded'); return; }
     try { firebase.database().ref('strands/' + raw + '/herrDeviceId').set(deviceId); } catch(e){}
+    if (herrName) {
+      // Name in den Strang (für die Sub/Hub) UND in die Registry (für „Herren verwalten" des Hauptherrn) schreiben
+      try { firebase.database().ref('strands/' + raw + '/herrName').set(herrName); } catch(e){}
+      if (sv.mainCode) { try { firebase.database().ref('pflichten/' + sv.mainCode + '/strandRegistry/' + raw + '/herrName').set(herrName); } catch(e){} }
+      try { localStorage.setItem('devotion_herr_name', herrName); } catch(e){}
+    }
     try { localStorage.setItem('devotion_strand_mode', raw); } catch(e){}
     initSync(raw, { strand: true });
   }, () => { document.getElementById('setupError').textContent = t('mhStrandNotFound'); });
