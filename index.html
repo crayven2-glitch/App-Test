@@ -1046,7 +1046,9 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   <div class="modal" style="text-align:center;padding-top:30px;">
     <div style="color:var(--text2);display:flex;justify-content:center;margin-bottom:12px;"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
     <h3 id="mhStrandLockTitle" style="margin:0 0 8px;">Derzeit nicht aktiv</h3>
-    <p id="mhStrandLockBody" style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0;">Aktuell ist kein Slot frei. Bitte später erneut versuchen.</p>
+    <p id="mhStrandLockBody" style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0 0 18px;">Aktuell ist kein Slot frei. Bitte später erneut versuchen.</p>
+    <!-- B7: Der Nebenherr muss sein Abo IMMER verwalten/kündigen können, auch wenn der Strang pausiert/beendet ist. -->
+    <button id="mhStrandLockAbo" onclick="openCustomerPortal()" style="width:100%;padding:11px;border:1px solid var(--text2);border-radius:10px;background:none;color:var(--text);font-size:13.5px;font-weight:600;cursor:pointer;">Abo verwalten / kündigen</button>
   </div>
 </div>
 
@@ -1243,6 +1245,11 @@ const I18N = {
     mhSafewordResume: 'Fortsetzen',
     mhStrandLockTitle: 'Derzeit nicht aktiv',
     mhStrandLockBody: 'Aktuell ist kein Slot frei. Bitte später erneut versuchen.',
+    mhLockPausedTitle: 'Pausiert',
+    mhLockPausedBody: 'Dein Strang wurde pausiert. Bitte später erneut versuchen.',
+    mhLockEndedTitle: 'Beendet',
+    mhLockEndedBody: 'Dieser Strang wurde beendet.',
+    mhLockManageAbo: 'Abo verwalten / kündigen',
     mhStrandGateTitle: 'Premium für diesen Strang',
     mhStrandGateBody: 'Als Herr brauchst du ein eigenes Premium-Abo, um deinen Strang zu aktivieren und Aufgaben zu vergeben.',
     mhStrandGateBtn: 'Premium-Abo abschließen',
@@ -1568,6 +1575,11 @@ const I18N = {
     mhSafewordResume: 'Resume',
     mhStrandLockTitle: 'Currently inactive',
     mhStrandLockBody: 'No slot is available right now. Please try again later.',
+    mhLockPausedTitle: 'Paused',
+    mhLockPausedBody: 'Your strand was paused. Please try again later.',
+    mhLockEndedTitle: 'Ended',
+    mhLockEndedBody: 'This strand has ended.',
+    mhLockManageAbo: 'Manage / cancel subscription',
     mhStrandGateTitle: 'Premium for this strand',
     mhStrandGateBody: 'As a master you need your own Premium subscription to activate your strand and assign tasks.',
     mhStrandGateBtn: 'Get Premium',
@@ -2196,6 +2208,8 @@ function setStrandStatus(strandId, status) {
   if (mehrHerrenAvailable() && currentRef) {
     currentRef.child('strandRegistry/' + strandId + '/status').set(status);
     if (db) db.ref('strands/' + strandId + '/status').set(status); // Strang-Knoten spiegeln (Beitritts-Block + späterer Not-Aus, B6)
+    // B7: Status-Push an den Nebenherrn (aktiviert/pausiert/beendet) — auch wenn seine App geschlossen ist.
+    if (db) { try { db.ref('strands/' + strandId + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'strandStatus', status: status }); } catch (e) {} }
   }
 }
 // B7: Premium-Check auf einem subscription-Objekt — gespiegelt aus loadSubscription (manual / active / canceled-im-Zeitraum), Plan muss premium sein.
@@ -2584,6 +2598,8 @@ function mhSubPauseStrand(strandId) {
   // 1) Strang sperren (Nebenherr wird live neutral gesperrt) + Safeword markieren.
   try { db.ref('strands/' + strandId + '/status').set('blocked'); } catch (e) {}
   try { db.ref('strands/' + strandId + '/safeword').set(sw); } catch (e) {}
+  // B7: Status-Push an den Nebenherrn („pausiert") — auch bei geschlossener App (Wortlaut neutral, kein Safeword-Grund).
+  try { db.ref('strands/' + strandId + '/lastActivity').set({ timestamp: now, device: deviceId, type: 'strandStatus', status: 'blocked' }); } catch (e) {}
   // 2) In der Registry des Hauptherrn spiegeln (für „Herren verwalten" + Banner).
   if (syncCode) {
     try { db.ref('pflichten/' + syncCode + '/strandRegistry/' + strandId + '/status').set('blocked'); } catch (e) {}
@@ -2644,8 +2660,10 @@ function mhEnforceStrandLock(status) {
   const ov = document.getElementById('mhStrandLock');
   if (!ov) return;
   if (status === 'blocked' || status === 'ended') {
-    const tEl = document.getElementById('mhStrandLockTitle'); if (tEl) tEl.textContent = t('mhStrandLockTitle');
-    const bEl = document.getElementById('mhStrandLockBody'); if (bEl) bEl.textContent = t('mhStrandLockBody');
+    const ended = status === 'ended';
+    const tEl = document.getElementById('mhStrandLockTitle'); if (tEl) tEl.textContent = t(ended ? 'mhLockEndedTitle' : 'mhLockPausedTitle');
+    const bEl = document.getElementById('mhStrandLockBody'); if (bEl) bEl.textContent = t(ended ? 'mhLockEndedBody' : 'mhLockPausedBody');
+    const ab = document.getElementById('mhStrandLockAbo'); if (ab) ab.textContent = t('mhLockManageAbo'); // B7: Abo immer verwaltbar
     ov.classList.add('open');
   } else {
     ov.classList.remove('open');
@@ -5261,7 +5279,8 @@ async function openCustomerPortal() {
     const res = await fetch(API_BASE + 'customer-portal.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pairCode: syncCode })
+      // B7: im Nebenherr-Strang-Modus das Strang-Abo verwalten (strands/{id}), sonst die Paarung.
+      body: JSON.stringify({ pairCode: syncCode, targetType: window._isNebenherr ? 'strand' : 'pair', targetId: syncCode })
     });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
