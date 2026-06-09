@@ -2176,7 +2176,7 @@ function isSub() { return currentRole === 'sub' && canUse('roles'); }
 // ── MEHR-HERREN-MODUS (Fundament, v1 in Bau in work/) ──
 // Der Dom der Hauptpaarung ist der Hauptherr (Stammherr). Mehr-Herren ist Premium-only.
 function isMainHerr() { return isDom() && !window._isNebenherr; } // Hauptherr = Dom der Hauptpaarung, NICHT ein Nebenherr in seinem Strang
-function mehrHerrenAvailable() { return isMainHerr(); } // TEST-BUILD: Invite-Gate AUS (nur Test)
+function mehrHerrenAvailable() { return isMainHerr() && currentPlan === 'premium'; }
 function getStrandRegistry() { return (window._strandRegistry && typeof window._strandRegistry === 'object') ? window._strandRegistry : {}; }
 function strandList() { const r = getStrandRegistry(); return Object.keys(r).map(id => Object.assign({ strandId: id }, r[id])); }
 function generateStrandCode() { const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c=''; for(let i=0;i<8;i++) c+=chars[Math.floor(Math.random()*chars.length)]; return c; }
