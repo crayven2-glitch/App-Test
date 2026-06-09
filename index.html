@@ -1049,6 +1049,17 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
 </div>
 
+<!-- B7: Premium-Gate für den Nebenherrn — sein Strang braucht ein EIGENES Premium-Abo (§13.5, kein Trial).
+     z-index 9998 = direkt unter dem Not-Aus-Lock (9999), damit blocked/ended Vorrang hat. -->
+<div class="modal-overlay" id="mhStrandPremiumGate" style="z-index:9998;">
+  <div class="modal" style="text-align:center;padding-top:30px;">
+    <div style="color:var(--accent);display:flex;justify-content:center;margin-bottom:12px;"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+    <h3 id="mhStrandGateTitle" style="margin:0 0 8px;">Premium für diesen Strang</h3>
+    <p id="mhStrandGateBody" style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0 0 18px;">Als Herr brauchst du ein eigenes Premium-Abo, um deinen Strang zu aktivieren und Aufgaben zu vergeben.</p>
+    <button id="mhStrandGateBtn" onclick="mhStrandUpsell()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Premium-Abo abschließen</button>
+  </div>
+</div>
+
 <!-- PIN MODAL -->
 <div class="modal-overlay" id="pinModal">
   <div class="modal" style="text-align:center; padding-top:28px;">
@@ -1230,6 +1241,13 @@ const I18N = {
     mhSafewordResume: 'Fortsetzen',
     mhStrandLockTitle: 'Derzeit nicht aktiv',
     mhStrandLockBody: 'Aktuell ist kein Slot frei. Bitte später erneut versuchen.',
+    mhStrandGateTitle: 'Premium für diesen Strang',
+    mhStrandGateBody: 'Als Herr brauchst du ein eigenes Premium-Abo, um deinen Strang zu aktivieren und Aufgaben zu vergeben.',
+    mhStrandGateBtn: 'Premium-Abo abschließen',
+    mhReleaseNeedsPremium: 'Dieser Herr hat noch kein Premium-Abo. Der Strang kann erst freigegeben werden, wenn der Herr Premium abgeschlossen hat.',
+    mhStrandWaitPremium: 'wartet auf Premium',
+    mhStrandReady: 'bereit (Premium)',
+    mhStrandPremNote: 'Dein Strang braucht ein Premium-Abo. Deine Sub zahlt nichts.',
     rolePremiumLocked: 'Premium-Feature',
     roleChangePremium: 'In Premium',
     settingsTitleDom: 'Aufgaben verwalten',
@@ -1547,6 +1565,13 @@ const I18N = {
     mhSafewordResume: 'Resume',
     mhStrandLockTitle: 'Currently inactive',
     mhStrandLockBody: 'No slot is available right now. Please try again later.',
+    mhStrandGateTitle: 'Premium for this strand',
+    mhStrandGateBody: 'As a master you need your own Premium subscription to activate your strand and assign tasks.',
+    mhStrandGateBtn: 'Get Premium',
+    mhReleaseNeedsPremium: 'This master has no Premium subscription yet. The strand can only be released once the master has Premium.',
+    mhStrandWaitPremium: 'waiting for Premium',
+    mhStrandReady: 'ready (Premium)',
+    mhStrandPremNote: 'Your strand requires a Premium subscription. Your sub pays nothing.',
     rolePremiumLocked: 'Premium feature',
     roleChangePremium: 'Get Premium',
     settingsTitleDom: 'Manage tasks',
@@ -2169,7 +2194,13 @@ function setStrandStatus(strandId, status) {
     if (db) db.ref('strands/' + strandId + '/status').set(status); // Strang-Knoten spiegeln (Beitritts-Block + späterer Not-Aus, B6)
   }
 }
-function freigebenStrand(id) { setStrandStatus(id, 'active'); }
+function freigebenStrand(id) {
+  // B7 Release-Guard: Strang erst aktiv, wenn der Nebenherr ein eigenes Premium-Abo gemeldet hat (§13.5).
+  // s.premium wird vom Nebenherrn via mhSyncStrandPremium in die Registry gespiegelt.
+  const s = strandList().find(x => x.strandId === id);
+  if (!s || !s.premium) { alert(t('mhReleaseNeedsPremium')); return; }
+  setStrandStatus(id, 'active');
+}
 function pauseStrand(id) { setStrandStatus(id, 'blocked'); }
 function endStrand(id) { if (confirm(t('mhEndConfirm'))) setStrandStatus(id, 'ended'); }
 function renderStrandList() {
@@ -2185,6 +2216,10 @@ function renderStrandList() {
     if (st === 'active') actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;" onclick="pauseStrand(\'' + s.strandId + '\')">' + t('mhPause') + '</button>';
     actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;border-color:var(--red);color:var(--red);" onclick="endStrand(\'' + s.strandId + '\')">' + t('mhEnd') + '</button>';
     const codeLine = (st === 'pending') ? '<div style="font-size:11px;color:var(--accent);margin-top:4px;">' + t('mhShareCode') + ': <b>' + s.strandId + '</b></div>' : '';
+    // B7: Premium-Status des Strangs (vom Nebenherrn gespiegelt) — nur relevant, solange noch nicht aktiv.
+    const premLine = (st !== 'active' && st !== 'ended')
+      ? '<div style="font-size:11px;margin-top:4px;color:' + (s.premium ? 'var(--green)' : 'var(--text2)') + ';">' + t(s.premium ? 'mhStrandReady' : 'mhStrandWaitPremium') + '</div>'
+      : '';
     // B6: Hinweis, wenn die Sub diesen Strang per Safeword pausiert hat (noch nicht quittiert).
     const swLine = (s.safeword && s.safeword.by === 'sub' && !s.safeword.ack)
       ? '<div style="font-size:11px;color:var(--yellow);margin-top:4px;display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' + t('mhSafewordBannerTitle') + '</div>'
@@ -2194,7 +2229,7 @@ function renderStrandList() {
       + '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;">' + (s.herrName || t('mhUnnamedHerr')) + '</div>'
       + '<div style="font-size:11px;color:var(--text2);">' + t('mhStatus_' + st) + '</div></div>'
       + '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">' + actions + '</div></div>'
-      + swLine + codeLine + '</div>';
+      + premLine + swLine + codeLine + '</div>';
   }).join('');
 }
 function updateMehrHerrenUI() {
@@ -2434,6 +2469,10 @@ function mhCycleStrandStatus(strandId, taskId) {
   renderSubHub();
   const ref = db.ref('strands/' + strandId + '/weekData/' + weekKey + '/days/' + selectedDay + '/' + taskId);
   (next === '' ? ref.remove() : ref.set(next)).catch(e => console.error('Strang-Status schreiben fehlgeschlagen:', e));
+  // B7 Push: Sub hat erledigt/verpasst → Server pusht den Nebenherrn (strands/{id}/fcmTokens).
+  if (next === 'done' || next === 'missed') {
+    try { db.ref('strands/' + strandId + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'subDone', taskStatus: next }); } catch (e) {}
+  }
 }
 
 // B6: Nachweis-Modal aus dem Hub öffnen (Cross-Strang-Kontext setzen, dann das bestehende Modal nutzen).
@@ -2478,6 +2517,8 @@ async function mhSaveStrandProof(strandId, weekKey, note) {
       else delete sd.weekData[weekKey].proofs[selectedDay][tid];
     }
   } catch (e) {}
+  // B7 Push: Sub hat einen Nachweis hochgeladen → Server pusht den Nebenherrn (strands/{id}/fcmTokens).
+  if (val) { try { db.ref('strands/' + strandId + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'subProof', taskStatus: 'proof' }); } catch (e) {} }
   renderSubHub();
   closeProofModal();
 }
@@ -2504,7 +2545,10 @@ function mhSubPauseStrand(strandId) {
       db.ref('pflichten/' + syncCode + '/lastActivity').set({
         timestamp: now, device: deviceId,
         taskName: t('mhSafewordPushTitle'),
-        taskStatus: 'safeword'
+        taskStatus: 'safeword',
+        type: 'safeword',
+        herrName: herrName,   // B7: für den Push-Wortlaut beim Hauptherrn („Sub hat [Herr X] pausiert")
+        strandId: strandId
       });
     } catch (e) {}
   }
@@ -2557,6 +2601,45 @@ function mhEnforceStrandLock(status) {
     ov.classList.remove('open');
   }
 }
+
+// ── MEHR-HERREN Baustein 7a: Premium-Gate pro Strang ──
+// Der Nebenherr braucht ein EIGENES aktives Premium-Abo für seinen Strang (§13.5 — KEIN Trial).
+// currentPlan stammt im Strang-Modus aus strands/{id}/subscription (loadSubscription liest currentRef).
+// Wir spiegeln den Premium-Status in die Registry des Hauptherrn (Release-Guard) + steuern das Gate.
+function mhSyncStrandPremium() {
+  if (!window._isNebenherr || !db || !syncCode) return;
+  const isPrem = (currentPlan === 'premium');
+  const mainCode = window._strandMainCode || '';
+  // Nur schreiben, wenn sich Premium ODER die mainCode-Verfügbarkeit geändert hat — kein Write-Storm,
+  // da applyFeatureGating() öfter läuft (sonst würde der Hauptherr-Listener unnötig oft feuern).
+  const sig = isPrem + '|' + mainCode;
+  if (window._mhPremMirrorSig !== sig) {
+    window._mhPremMirrorSig = sig;
+    try { db.ref('strands/' + syncCode + '/premium').set(isPrem); } catch (e) {}
+    if (mainCode) { try { db.ref('pflichten/' + mainCode + '/strandRegistry/' + syncCode + '/premium').set(isPrem); } catch (e) {} }
+  }
+  mhEnforceStrandPremium(isPrem);
+}
+
+// B7: Gate-Overlay für den Nebenherrn ohne Premium. Der Not-Aus-Lock (blocked/ended) hat Vorrang (z-index).
+function mhEnforceStrandPremium(isPrem) {
+  if (!window._isNebenherr) return;
+  const ov = document.getElementById('mhStrandPremiumGate');
+  if (!ov) return;
+  const status = window._strandStatus;
+  const locked = (status === 'blocked' || status === 'ended');
+  if (!isPrem && !locked) {
+    const tEl = document.getElementById('mhStrandGateTitle'); if (tEl) tEl.textContent = t('mhStrandGateTitle');
+    const bEl = document.getElementById('mhStrandGateBody'); if (bEl) bEl.textContent = t('mhStrandGateBody');
+    const btn = document.getElementById('mhStrandGateBtn'); if (btn) btn.textContent = t('mhStrandGateBtn');
+    ov.classList.add('open');
+  } else {
+    ov.classList.remove('open');
+  }
+}
+
+// B7: Nebenherr tippt „Premium-Abo abschließen" → Pricing-Screen (für Nebenherr Premium-only, siehe showPricing).
+function mhStrandUpsell() { showPricing(); }
 
 function setRole(role) {
   if (role !== 'dom' && role !== 'sub' && role !== 'none') return;
@@ -2840,7 +2923,11 @@ function initSync(code, opts) {
     const data = snapshot.val();
     // B6 Live-Not-Aus: Nebenherr-App sofort neutral sperren, sobald der Strang blocked/ended ist
     // (auch während eines lokalen Schreibvorgangs — Sperre hat Vorrang).
-    if (window._isNebenherr) mhEnforceStrandLock(data && data.status);
+    if (window._isNebenherr) {
+      window._strandStatus = data && data.status;                          // B7: Gate-Vorrang (blocked/ended)
+      if (data && data.mainCode) window._strandMainCode = data.mainCode;   // B7: Ziel für den Premium-Mirror in die Registry
+      mhEnforceStrandLock(data && data.status);
+    }
     if (localWriting) return;
     window._rolesSince = (data && data.rolesSince) ? data.rolesSince : null;
     window._strandRegistry = (data && data.strandRegistry) ? data.strandRegistry : {}; // Mehr-Herren: Liste der Neben-Stränge
@@ -4058,6 +4145,10 @@ function saveTasks() {
   });
   // days are already saved via toggleDay()
   saveData();
+  // B7 Push: Nebenherr hat seine Aufgaben aktualisiert → Server pusht die Sub (Routing via strands/{id}/mainCode).
+  if (window._isNebenherr && db && syncCode) {
+    try { db.ref('strands/' + syncCode + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'newTask', taskStatus: 'newTask' }); } catch (e) {}
+  }
   render();
   alert(t('saved'));
 }
@@ -4984,9 +5075,18 @@ function showPricing() {
   const ps = document.getElementById('pricingScreen');
   ps.classList.remove('hidden');
   ps.scrollTop = 0;
-  // Allow skip only if trial still active
+  // B7: Der Nebenherr braucht Premium für seinen Strang — Basic ausblenden, Hinweis zeigen, kein „Später".
+  const basicCard = document.getElementById('pricingBasicCard');
+  const descEl = document.getElementById('pricingDesc');
+  if (window._isNebenherr) {
+    if (basicCard) basicCard.style.display = 'none';
+    if (descEl) descEl.textContent = t('mhStrandPremNote');
+  } else {
+    if (basicCard) basicCard.style.display = '';
+  }
+  // Allow skip only if trial still active (Nebenherr: nie — Premium ist Pflicht)
   const skipBtn = document.getElementById('pricingSkipBtn');
-  skipBtn.style.display = (currentPlan === 'trial' && trialDaysLeft > 0) ? 'block' : 'none';
+  skipBtn.style.display = (!window._isNebenherr && currentPlan === 'trial' && trialDaysLeft > 0) ? 'block' : 'none';
 }
 
 function closePricing() {
@@ -5014,10 +5114,14 @@ async function startCheckout(plan) {
   if (btn) { btn.textContent = '...'; btn.disabled = true; }
 
   try {
+    // B7: Abo-Ziel — im Nebenherr-Strang-Modus zahlt der Herr für SEINEN Strang (strands/{id}),
+    // sonst die Paarung (pflichten/{code}). targetType/targetId steuern das Routing im Webhook;
+    // pairCode bleibt für Rückwärtskompatibilität erhalten.
+    const mhTargetType = window._isNebenherr ? 'strand' : 'pair';
     const res = await fetch(API_BASE + 'create-checkout.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ priceId, pairCode: syncCode, returnUrl: window.location.href.split('?')[0] })
+      body: JSON.stringify({ priceId, pairCode: syncCode, targetType: mhTargetType, targetId: syncCode, returnUrl: window.location.href.split('?')[0] })
     });
     const data = await res.json();
 
@@ -5327,6 +5431,9 @@ function applyFeatureGating() {
 
   // Ads: show for free users, hide for premium
   refreshAdsState();
+  // B7: Nebenherr-Premium-Gate + Premium-Mirror nach JEDER Gating-Anwendung — deckt alle
+  // loadSubscription-Pfade ab (Stripe-active, manual, trial, device-trial) UND onIAPResult (iOS-IAP).
+  if (window._isNebenherr && typeof mhSyncStrandPremium === 'function') mhSyncStrandPremium();
   if (typeof applyRoleUI === 'function') applyRoleUI();
 }
 
