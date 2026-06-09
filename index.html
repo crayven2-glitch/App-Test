@@ -558,6 +558,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   <button class="setup-btn" onclick="connectWithCode()">Einloggen</button>
   <div class="setup-divider">oder</div>
   <button class="setup-btn-sec" onclick="generateCode()">Neuen Code generieren</button>
+  <button class="setup-btn-sec" id="joinHerrBtn" onclick="joinAsNebenherr()" style="margin-top:4px;">Als Herr beitreten</button>
   <div style="display:flex;justify-content:center;gap:24px;margin-top:28px;">
     <a href="https://www.instagram.com/devotion.app.official/" target="_blank" rel="noopener" aria-label="Instagram" style="color:var(--text2);display:inline-flex;transition:color .2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -952,6 +953,11 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
       <button class="notif-btn" id="roleStateBtn" style="display:none" onclick="roleStateAction()">—</button>
     </div>
   </div>
+  <div class="lang-card dom-only" id="mainHerrCard" style="display:none;flex-direction:column;align-items:stretch;gap:10px;">
+    <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="mainHerrLabel">Herren verwalten</span></div>
+    <div id="strandList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    <button class="notif-btn" id="inviteHerrBtn" onclick="inviteHerr()">Herr einladen</button>
+  </div>
   <div class="lang-card">
     <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--yellow)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span> <span id="notifLabel">Benachrichtigungen</span></div>
     <button class="notif-btn" id="notifBtn" onclick="enablePush()">Push aktivieren</button>
@@ -1176,6 +1182,20 @@ const I18N = {
     roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
     roleBecomeSub: 'Zur Sub-Rolle wechseln',
     roleSettingsLabelText: 'Rolle',
+    mainHerrLabel: 'Herren verwalten',
+    inviteHerrBtn: 'Herr einladen',
+    mhNoStrands: 'Noch keine Nebenherren eingeladen.',
+    mhUnnamedHerr: 'Unbenannter Herr',
+    mhShareCode: 'Code zum Teilen',
+    mhRelease: 'Freigeben',
+    mhResume: 'Fortsetzen',
+    mhPause: 'Pausieren',
+    mhEnd: 'Entziehen',
+    mhEndConfirm: 'Diesen Herrn wirklich entziehen? Der Strang wird beendet.',
+    mhStatus_pending: 'Wartet auf Freigabe',
+    mhStatus_active: 'Aktiv',
+    mhStatus_blocked: 'Pausiert',
+    mhStatus_ended: 'Beendet',
     rolePremiumLocked: 'Premium-Feature',
     roleChangePremium: 'In Premium',
     settingsTitleDom: 'Aufgaben verwalten',
@@ -1197,6 +1217,9 @@ const I18N = {
     setupTitle: 'Einloggen',
     setupDesc: 'Gib einen gemeinsamen Code ein, damit beide Handys dieselben Daten sehen.',
     setupConnect: 'Einloggen',
+    joinHerrBtn: 'Als Herr beitreten',
+    mhStrandNotFound: 'Kein Strang mit diesem Code gefunden.',
+    mhStrandEnded: 'Dieser Strang wurde beendet.',
     setupOr: 'oder',
     setupGenerate: 'Neuen Code generieren',
     setupMinChars: 'Mindestens 4 Zeichen eingeben.',
@@ -1455,6 +1478,20 @@ const I18N = {
     roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
     roleBecomeSub: 'Switch to Sub role',
     roleSettingsLabelText: 'Role',
+    mainHerrLabel: 'Manage masters',
+    inviteHerrBtn: 'Invite master',
+    mhNoStrands: 'No additional masters invited yet.',
+    mhUnnamedHerr: 'Unnamed master',
+    mhShareCode: 'Share code',
+    mhRelease: 'Release',
+    mhResume: 'Resume',
+    mhPause: 'Pause',
+    mhEnd: 'Remove',
+    mhEndConfirm: 'Really remove this master? The strand will end.',
+    mhStatus_pending: 'Awaiting release',
+    mhStatus_active: 'Active',
+    mhStatus_blocked: 'Paused',
+    mhStatus_ended: 'Ended',
     rolePremiumLocked: 'Premium feature',
     roleChangePremium: 'Get Premium',
     settingsTitleDom: 'Manage tasks',
@@ -1476,6 +1513,9 @@ const I18N = {
     setupTitle: 'Log in',
     setupDesc: 'Enter a shared code so both phones see the same data.',
     setupConnect: 'Log in',
+    joinHerrBtn: 'Join as master',
+    mhStrandNotFound: 'No strand found for this code.',
+    mhStrandEnded: 'This strand has ended.',
     setupOr: 'or',
     setupGenerate: 'Generate new code',
     setupMinChars: 'Enter at least 4 characters.',
@@ -1771,6 +1811,7 @@ function applyLanguage() {
   if (setupBtn) setupBtn.textContent = t('setupConnect');
   if (setupSec) setupSec.textContent = t('setupGenerate');
   if (setupDiv) setupDiv.textContent = t('setupOr');
+  const joinBtn = document.getElementById('joinHerrBtn'); if (joinBtn) joinBtn.textContent = t('joinHerrBtn');
   const setupInput = document.getElementById('setupCodeInput');
   if (setupInput) setupInput.placeholder = t('setupPlaceholder');
 
@@ -2047,6 +2088,67 @@ function saveLocalRole(code, role) { try { localStorage.setItem(localRoleKey(cod
 function isDom() { return currentRole === 'dom' && canUse('roles'); }
 function isSub() { return currentRole === 'sub' && canUse('roles'); }
 
+// ── MEHR-HERREN-MODUS (Fundament, v1 in Bau in work/) ──
+// Der Dom der Hauptpaarung ist der Hauptherr (Stammherr). Mehr-Herren ist Premium-only.
+function isMainHerr() { return isDom() && !window._isNebenherr; } // Hauptherr = Dom der Hauptpaarung, NICHT ein Nebenherr in seinem Strang
+function mehrHerrenAvailable() { return isMainHerr(); } // TEST-BUILD: Premium-Gate AUS (nur zum Testen)
+function getStrandRegistry() { return (window._strandRegistry && typeof window._strandRegistry === 'object') ? window._strandRegistry : {}; }
+function strandList() { const r = getStrandRegistry(); return Object.keys(r).map(id => Object.assign({ strandId: id }, r[id])); }
+function generateStrandCode() { const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c=''; for(let i=0;i<8;i++) c+=chars[Math.floor(Math.random()*chars.length)]; return c; }
+function inviteHerr() {
+  if (!mehrHerrenAvailable() || !currentRef || !db || !syncCode) return;
+  const strandId = generateStrandCode(); // 8-Zeichen-Code IST die Strang-ID (teilbar)
+  const now = Date.now();
+  currentRef.child('strandRegistry/' + strandId).set({ herrName:'', status:'pending', createdAt:now, herrDeviceId:'' });
+  db.ref('strands/' + strandId).set({ mainCode: syncCode, herrName:'', status:'pending', createdAt:now }); // isolierter Strang-Knoten
+  // _strandRegistry kommt per Sync-Listener zurück → updateMehrHerrenUI() rendert neu
+}
+function setStrandStatus(strandId, status) { if (mehrHerrenAvailable() && currentRef) currentRef.child('strandRegistry/' + strandId + '/status').set(status); }
+function freigebenStrand(id) { setStrandStatus(id, 'active'); }
+function pauseStrand(id) { setStrandStatus(id, 'blocked'); }
+function endStrand(id) { if (confirm(t('mhEndConfirm'))) setStrandStatus(id, 'ended'); }
+function renderStrandList() {
+  const el = document.getElementById('strandList');
+  if (!el) return;
+  const list = strandList().filter(s => s.status !== 'ended');
+  if (!list.length) { el.innerHTML = '<div style="font-size:12.5px;color:var(--text2);">' + t('mhNoStrands') + '</div>'; return; }
+  el.innerHTML = list.map(s => {
+    const st = s.status || 'pending';
+    let actions = '';
+    if (st === 'pending') actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;" onclick="freigebenStrand(\'' + s.strandId + '\')">' + t('mhRelease') + '</button>';
+    if (st === 'blocked') actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;" onclick="freigebenStrand(\'' + s.strandId + '\')">' + t('mhResume') + '</button>';
+    if (st === 'active') actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;" onclick="pauseStrand(\'' + s.strandId + '\')">' + t('mhPause') + '</button>';
+    actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;border-color:var(--red);color:var(--red);" onclick="endStrand(\'' + s.strandId + '\')">' + t('mhEnd') + '</button>';
+    const codeLine = (st === 'pending') ? '<div style="font-size:11px;color:var(--accent);margin-top:4px;">' + t('mhShareCode') + ': <b>' + s.strandId + '</b></div>' : '';
+    return '<div style="background:var(--surface2);border-radius:10px;padding:9px 11px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
+      + '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;">' + (s.herrName || t('mhUnnamedHerr')) + '</div>'
+      + '<div style="font-size:11px;color:var(--text2);">' + t('mhStatus_' + st) + '</div></div>'
+      + '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">' + actions + '</div></div>'
+      + codeLine + '</div>';
+  }).join('');
+}
+function updateMehrHerrenUI() {
+  const card = document.getElementById('mainHerrCard');
+  if (!card) return;
+  const lbl = document.getElementById('mainHerrLabel'); if (lbl) lbl.textContent = t('mainHerrLabel');
+  const ib = document.getElementById('inviteHerrBtn'); if (ib) ib.textContent = t('inviteHerrBtn');
+  if (mehrHerrenAvailable()) { card.style.display = ''; renderStrandList(); } else { card.style.display = 'none'; }
+}
+function joinAsNebenherr() {
+  const raw = document.getElementById('setupCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  if (raw.length < 4) { document.getElementById('setupError').textContent = t('setupMinChars'); return; }
+  document.getElementById('setupError').textContent = '';
+  try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } catch(e){}
+  firebase.database().ref('strands/' + raw).once('value', snap => {
+    if (!snap.exists()) { document.getElementById('setupError').textContent = t('mhStrandNotFound'); return; }
+    if ((snap.val() || {}).status === 'ended') { document.getElementById('setupError').textContent = t('mhStrandEnded'); return; }
+    try { firebase.database().ref('strands/' + raw + '/herrDeviceId').set(deviceId); } catch(e){}
+    try { localStorage.setItem('devotion_strand_mode', raw); } catch(e){}
+    initSync(raw, { strand: true });
+  }, () => { document.getElementById('setupError').textContent = t('mhStrandNotFound'); });
+}
+
 function setRole(role) {
   if (role !== 'dom' && role !== 'sub' && role !== 'none') return;
   currentRole = role;
@@ -2060,6 +2162,7 @@ function setRole(role) {
 // und fragt sie ab, falls weder lokal noch remote gesetzt (= auch Bestands-Migration).
 function loadRole() {
   if (!currentRef) return;
+  if (window._isNebenherr) { currentRole = 'dom'; applyRoleUI(); return; } // Nebenherr ist Dom seines Strangs — keine Rollen-Auswahl
   // Auf ALLE Rollen der Paarung lauschen (nicht nur die eigene), um Fehlzustände
   // (2× Dom / 2× Sub) zu erkennen und den Auswahl-Screen zu steuern.
   currentRef.child('roles').on('value', snap => {
@@ -2287,7 +2390,9 @@ function restoreFromLocalIfAny(code) {
 }
 
 // ── FIREBASE ──
-function initSync(code) {
+function initSync(code, opts) {
+  opts = opts || {};
+  const isStrand = !!opts.strand; // Nebenherr-Modus: gegen strands/{code} statt pflichten/{code}
   // Reset localStorage when switching to a different code
   const previousCode = syncCode || ((() => { try { return localStorage.getItem('pflichten_sync_code_2'); } catch(e) { return null; } })());
   if (previousCode && previousCode !== code) {
@@ -2300,7 +2405,7 @@ function initSync(code) {
   }
   syncCode = code;
   saveCodeLocally(code);
-  currentRole = loadLocalRole(code); // Rolle dieser Paarung laden (neuer Code → null → wird neu gefragt)
+  currentRole = isStrand ? 'dom' : loadLocalRole(code); // Nebenherr = Dom seines Strangs; sonst Paarungs-Rolle
   document.getElementById('currentCodeDisplay').textContent = code;
 
   try {
@@ -2317,13 +2422,16 @@ function initSync(code) {
   }
 
   if (currentRef) currentRef.off();
-  currentRef = db.ref('pflichten/' + code);
-  trackEvent('login', { method: 'pair_code' });
+  currentRef = db.ref((isStrand ? 'strands/' : 'pflichten/') + code);
+  window._isNebenherr = isStrand;
+  trackEvent('login', { method: isStrand ? 'strand_code' : 'pair_code' });
 
   currentRef.on('value', (snapshot) => {
     if (localWriting) return;
     const data = snapshot.val();
     window._rolesSince = (data && data.rolesSince) ? data.rolesSince : null;
+    window._strandRegistry = (data && data.strandRegistry) ? data.strandRegistry : {}; // Mehr-Herren: Liste der Neben-Stränge
+    if (typeof updateMehrHerrenUI === 'function') updateMehrHerrenUI();
     // Server ohne Aufgaben (leer ODER nur Basis-Felder nach versehentlichem Löschen)? Dann erst
     // den lokalen Stand dieses Geräts zurückspielen, falls vorhanden.
     const serverHasTasks = data && data.tasks && (Array.isArray(data.tasks) ? data.tasks.length > 0 : Object.keys(data.tasks).length > 0);
@@ -3998,6 +4106,7 @@ function doShowSettings() {
   document.getElementById('currentCodeDisplay').textContent = syncCode || '—';
   updatePinSettingsCard();
   applyRoleUI();
+  updateMehrHerrenUI();
 }
 
 // ── NAVIGATION ──
@@ -5007,7 +5116,8 @@ if (savedCode) {
   document.getElementById('langSelectScreen').classList.add('hidden');
   document.getElementById('ageCheckScreen').classList.add('hidden');
   document.getElementById('setupScreen').classList.add('hidden');
-  initSync(savedCode);
+  const _strandMode = (function(){ try { return localStorage.getItem('devotion_strand_mode'); } catch(e){ return null; } })();
+  initSync(savedCode, { strand: _strandMode === savedCode }); // Nebenherr-Modus über App-Neustart hinweg
 } else if (ageVerified) {
   document.getElementById('langSelectScreen').classList.add('hidden');
   document.getElementById('ageCheckScreen').classList.add('hidden');
