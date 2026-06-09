@@ -2198,12 +2198,47 @@ function setStrandStatus(strandId, status) {
     if (db) db.ref('strands/' + strandId + '/status').set(status); // Strang-Knoten spiegeln (Beitritts-Block + späterer Not-Aus, B6)
   }
 }
+// B7: Premium-Check auf einem subscription-Objekt — gespiegelt aus loadSubscription (manual / active / canceled-im-Zeitraum), Plan muss premium sein.
+function mhSubIsPremium(sub) {
+  if (!sub) return false;
+  if ((sub.plan || 'premium') !== 'premium') return false;
+  if (sub.manual === true) return true;
+  if (sub.status === 'active') return true;
+  if (sub.status === 'canceled' && sub.currentPeriodEnd && new Date(sub.currentPeriodEnd) > new Date()) return true;
+  return false;
+}
+// B7: Premium-Status der noch nicht aktiven Stränge direkt aus strands/{id}/subscription nachziehen
+// (unabhängig davon, ob die Nebenherr-App den Flag schon gespiegelt hat) → korrekte Pills + „bereit".
+function mhRefreshStrandPremiums() {
+  if (!db || !isMainHerr()) return;
+  strandList().filter(s => s.status !== 'active' && s.status !== 'ended').forEach(s => {
+    db.ref('strands/' + s.strandId + '/subscription').once('value').then(snap => {
+      const isPrem = mhSubIsPremium(snap.val());
+      const reg = window._strandRegistry && window._strandRegistry[s.strandId];
+      if (reg && reg.premium !== isPrem) {
+        reg.premium = isPrem;
+        if (syncCode) { try { db.ref('pflichten/' + syncCode + '/strandRegistry/' + s.strandId + '/premium').set(isPrem); } catch (e) {} }
+        renderStrandList();
+      }
+    }).catch(() => {});
+  });
+}
 function freigebenStrand(id) {
-  // B7 Release-Guard: Strang erst aktiv, wenn der Nebenherr ein eigenes Premium-Abo gemeldet hat (§13.5).
-  // s.premium wird vom Nebenherrn via mhSyncStrandPremium in die Registry gespiegelt.
-  const s = strandList().find(x => x.strandId === id);
-  if (!s || !s.premium) { alert(t('mhReleaseNeedsPremium')); return; }
-  setStrandStatus(id, 'active');
+  if (!isMainHerr() || !db) return;
+  // B7 Release-Guard (autoritativ): das ECHTE Strang-Abo direkt lesen, nicht nur den gespiegelten Flag —
+  // so geht Freigeben sofort, sobald der Strang Premium hat (egal ob die Nebenherr-App den Flag schon schrieb).
+  db.ref('strands/' + id + '/subscription').once('value').then(snap => {
+    const isPrem = mhSubIsPremium(snap.val());
+    const reg = window._strandRegistry && window._strandRegistry[id];
+    if (reg) reg.premium = isPrem;
+    if (syncCode) { try { db.ref('pflichten/' + syncCode + '/strandRegistry/' + id + '/premium').set(isPrem); } catch (e) {} }
+    if (!isPrem) { alert(t('mhReleaseNeedsPremium')); if (typeof renderStrandList === 'function') renderStrandList(); return; }
+    setStrandStatus(id, 'active');
+  }).catch(() => {
+    const s = strandList().find(x => x.strandId === id);
+    if (!s || !s.premium) { alert(t('mhReleaseNeedsPremium')); return; }
+    setStrandStatus(id, 'active');
+  });
 }
 function pauseStrand(id) { setStrandStatus(id, 'blocked'); }
 function endStrand(id) { if (confirm(t('mhEndConfirm'))) setStrandStatus(id, 'ended'); }
@@ -2248,7 +2283,7 @@ function updateMehrHerrenUI() {
     const isPrem = mehrHerrenAvailable();
     if (hint) hint.style.display = isPrem ? 'none' : '';
     const el = document.getElementById('strandList');
-    if (isPrem) { renderStrandList(); }
+    if (isPrem) { renderStrandList(); mhRefreshStrandPremiums(); } // B7: Premium-Status der Stränge live nachziehen
     else if (el) { el.innerHTML = ''; } // Free: keine Strang-Liste (kann eh keine haben)
   } else {
     card.style.display = 'none';
