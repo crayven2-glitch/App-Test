@@ -961,6 +961,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
   <div class="lang-card dom-only" id="mainHerrCard" style="display:none;flex-direction:column;align-items:stretch;gap:10px;">
     <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="mainHerrLabel">Herren verwalten</span></div>
+    <div id="mainHerrPremiumHint" style="display:none;font-size:12px;color:var(--text2);line-height:1.45;background:rgba(233,69,96,.08);border:1px solid rgba(233,69,96,.25);border-radius:8px;padding:8px 10px;">Mehr-Herren ist ein Premium-Feature. Tippe „Herr einladen", um Premium freizuschalten.</div>
     <div id="strandList" style="display:flex;flex-direction:column;gap:8px;"></div>
     <button class="notif-btn" id="inviteHerrBtn" onclick="inviteHerr()">Herr einladen</button>
   </div>
@@ -1211,6 +1212,7 @@ const I18N = {
     roleSettingsLabelText: 'Rolle',
     mainHerrLabel: 'Herren verwalten',
     inviteHerrBtn: 'Herr einladen',
+    mhPremiumHint: 'Mehr-Herren ist ein Premium-Feature. Tippe „Herr einladen", um Premium freizuschalten.',
     mhNoStrands: 'Noch keine Nebenherren eingeladen.',
     mhUnnamedHerr: 'Unbenannter Herr',
     mhShareCode: 'Code zum Teilen',
@@ -1535,6 +1537,7 @@ const I18N = {
     roleSettingsLabelText: 'Role',
     mainHerrLabel: 'Manage masters',
     inviteHerrBtn: 'Invite master',
+    mhPremiumHint: 'Multiple masters is a Premium feature. Tap "Invite master" to unlock Premium.',
     mhNoStrands: 'No additional masters invited yet.',
     mhUnnamedHerr: 'Unnamed master',
     mhShareCode: 'Share code',
@@ -2181,7 +2184,8 @@ function getStrandRegistry() { return (window._strandRegistry && typeof window._
 function strandList() { const r = getStrandRegistry(); return Object.keys(r).map(id => Object.assign({ strandId: id }, r[id])); }
 function generateStrandCode() { const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c=''; for(let i=0;i<8;i++) c+=chars[Math.floor(Math.random()*chars.length)]; return c; }
 function inviteHerr() {
-  if (!mehrHerrenAvailable() || !currentRef || !db || !syncCode) return;
+  if (!isMainHerr() || !currentRef || !db || !syncCode) return;
+  if (!mehrHerrenAvailable()) { showPricing(); return; } // B7: Free → Premium-Upsell statt no-op
   const strandId = generateStrandCode(); // 8-Zeichen-Code IST die Strang-ID (teilbar)
   const now = Date.now();
   currentRef.child('strandRegistry/' + strandId).set({ herrName:'', status:'pending', createdAt:now, herrDeviceId:'' });
@@ -2237,7 +2241,18 @@ function updateMehrHerrenUI() {
   if (!card) return;
   const lbl = document.getElementById('mainHerrLabel'); if (lbl) lbl.textContent = t('mainHerrLabel');
   const ib = document.getElementById('inviteHerrBtn'); if (ib) ib.textContent = t('inviteHerrBtn');
-  if (mehrHerrenAvailable()) { card.style.display = ''; renderStrandList(); } else { card.style.display = 'none'; }
+  const hint = document.getElementById('mainHerrPremiumHint'); if (hint) hint.textContent = t('mhPremiumHint');
+  // B7: Karte für den Hauptherrn IMMER zeigen (Discovery). Ohne Premium „locked" → Klick auf „Herr einladen" führt zum Upsell.
+  if (isMainHerr()) {
+    card.style.display = '';
+    const isPrem = mehrHerrenAvailable();
+    if (hint) hint.style.display = isPrem ? 'none' : '';
+    const el = document.getElementById('strandList');
+    if (isPrem) { renderStrandList(); }
+    else if (el) { el.innerHTML = ''; } // Free: keine Strang-Liste (kann eh keine haben)
+  } else {
+    card.style.display = 'none';
+  }
 }
 function joinAsNebenherr() {
   const nameInput = document.getElementById('herrNameInput');
