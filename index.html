@@ -2785,6 +2785,13 @@ function watchDomSubs() {
     window._domSubs = snap.val() || {};
     if (typeof renderDomTabs === 'function') renderDomTabs();
   }, () => {});
+  // Hauptsub-Tab-Name live spiegeln (dom-seitige Beschriftung von Tab 1).
+  if (window._domMainNameRef) { try { window._domMainNameRef.off(); } catch(e){} }
+  window._domMainNameRef = db.ref('pflichten/' + window._domMainCode + '/mainSubName');
+  window._domMainNameRef.on('value', snap => {
+    window._domMainSubName = snap.val() || '';
+    if (typeof renderDomTabs === 'function') renderDomTabs();
+  }, () => {});
 }
 
 // Neue Sub-Beziehung anlegen (leerer dom-verankerter Strang + Registry-Eintrag); Code zurückgeben.
@@ -2820,9 +2827,10 @@ function renderDomTabs() {
     const col = on ? '#fff' : 'var(--text)';
     const ico = opt.lock ? '🔒 ' : '';
     const x = (opt.removable && on) ? '<span onclick="event.stopPropagation();domRemoveSub(\'' + id + '\')" style="margin-left:9px;font-weight:700;opacity:.85;" title="Sub entfernen">×</span>' : '';
-    return '<button onclick="switchDomTab(\'' + id + '\')" style="flex:0 0 auto;border:none;border-radius:9px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:' + bg + ';color:' + col + ';opacity:' + (opt.lock && !on ? '.6' : '1') + ';">' + ico + esc(label) + x + '</button>';
+    const ed = (opt.rename && on) ? '<span onclick="event.stopPropagation();domRenameMainSub()" style="margin-left:9px;opacity:.85;" title="Umbenennen">&#9998;</span>' : '';
+    return '<button onclick="switchDomTab(\'' + id + '\')" style="flex:0 0 auto;border:none;border-radius:9px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:' + bg + ';color:' + col + ';opacity:' + (opt.lock && !on ? '.6' : '1') + ';">' + ico + esc(label) + x + ed + '</button>';
   };
-  let html = tab(window._domMainCode, 'Hauptsub');
+  let html = tab(window._domMainCode, window._domMainSubName || 'Hauptsub', { rename: true });
   subs.forEach(s => { html += tab(s.subId, s.subName || 'Sub', { lock: (s.status === 'pending' || s.status === 'blocked'), removable: true }); });
   if (subs.length < MAX_DOM_SUBS - 1) {
     html += '<button onclick="domAddSubPrompt()" aria-label="Sub hinzufügen" style="flex:0 0 auto;border:1px dashed var(--text2);border-radius:9px;padding:7px 12px;font-size:14px;cursor:pointer;background:none;color:var(--text2);">+</button>';
@@ -2848,6 +2856,14 @@ function domAddSubPrompt() {
   const subId = createDomSub(name);
   if (!subId) { alert('Konnte die Sub nicht anlegen.'); return; }
   alert('Neue Sub angelegt.\n\nBeitritts-Code für ' + ((name || '').trim() || 'die Sub') + ':\n\n' + subId + '\n\nGib ihn der Sub — sie tippt ihn beim Einrichten ein.');
+}
+
+// Hauptsub-Tab umbenennen (nur die dom-seitige Tab-Beschriftung; leer = „Hauptsub").
+function domRenameMainSub() {
+  const name = prompt('Name für den Hauptsub (leer = „Hauptsub"):', window._domMainSubName || '');
+  if (name === null) return;
+  const clean = String(name).trim().slice(0, 24);
+  try { if (db && window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/mainSubName').set(clean); } catch(e){}
 }
 
 // Sub entfernen: Beziehung + Registry-Eintrag löschen, offenen Tab zum Hauptsub schließen.
