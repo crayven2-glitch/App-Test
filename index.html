@@ -1065,6 +1065,16 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
 </div>
 
+<!-- DOM-MEHR-SUB: Gate für gesperrte Sub-Tabs (Dom) / Warten-Screen (Sub) -->
+<div class="modal-overlay" id="domSubGate" style="z-index:9998;">
+  <div class="modal" style="text-align:center;padding-top:30px;">
+    <div style="color:var(--accent);display:flex;justify-content:center;margin-bottom:12px;"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <h3 id="domSubGateTitle" style="margin:0 0 8px;">Zusatz-Abo nötig</h3>
+    <p id="domSubGateBody" style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0 0 18px;"></p>
+    <button id="domSubGateBtn" onclick="domSubUnlock()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Zum Testen freischalten</button>
+  </div>
+</div>
+
 <!-- PIN MODAL -->
 <div class="modal-overlay" id="pinModal">
   <div class="modal" style="text-align:center; padding-top:28px;">
@@ -2809,10 +2819,11 @@ function renderDomTabs() {
     const bg = on ? 'var(--accent)' : 'var(--surface2)';
     const col = on ? '#fff' : 'var(--text)';
     const ico = opt.lock ? '🔒 ' : '';
-    return '<button onclick="switchDomTab(\'' + id + '\')" style="flex:0 0 auto;border:none;border-radius:9px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:' + bg + ';color:' + col + ';opacity:' + (opt.lock && !on ? '.6' : '1') + ';">' + ico + esc(label) + '</button>';
+    const x = (opt.removable && on) ? '<span onclick="event.stopPropagation();domRemoveSub(\'' + id + '\')" style="margin-left:9px;font-weight:700;opacity:.85;" title="Sub entfernen">×</span>' : '';
+    return '<button onclick="switchDomTab(\'' + id + '\')" style="flex:0 0 auto;border:none;border-radius:9px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:' + bg + ';color:' + col + ';opacity:' + (opt.lock && !on ? '.6' : '1') + ';">' + ico + esc(label) + x + '</button>';
   };
   let html = tab(window._domMainCode, 'Hauptsub');
-  subs.forEach(s => { html += tab(s.subId, s.subName || 'Sub', { lock: (s.status === 'pending' || s.status === 'blocked') }); });
+  subs.forEach(s => { html += tab(s.subId, s.subName || 'Sub', { lock: (s.status === 'pending' || s.status === 'blocked'), removable: true }); });
   if (subs.length < MAX_DOM_SUBS - 1) {
     html += '<button onclick="domAddSubPrompt()" aria-label="Sub hinzufügen" style="flex:0 0 auto;border:1px dashed var(--text2);border-radius:9px;padding:7px 12px;font-size:14px;cursor:pointer;background:none;color:var(--text2);">+</button>';
   }
@@ -2836,6 +2847,46 @@ function domAddSubPrompt() {
   const subId = createDomSub(name);
   if (!subId) { alert('Konnte die Sub nicht anlegen.'); return; }
   alert('Neue Sub angelegt.\n\nBeitritts-Code für ' + ((name || '').trim() || 'die Sub') + ':\n\n' + subId + '\n\nGib ihn der Sub — sie tippt ihn beim Einrichten ein.');
+}
+
+// Sub entfernen: Beziehung + Registry-Eintrag löschen, offenen Tab zum Hauptsub schließen.
+function domRemoveSub(subId) {
+  const s = (window._domSubs || {})[subId];
+  const name = (s && s.subName) || 'diese Sub';
+  if (!confirm('„' + name + '" wirklich entfernen? Aufgaben und Verlauf dieser Sub werden gelöscht.')) return;
+  try { if (db) db.ref('strands/' + subId).remove(); } catch(e){}
+  try { if (db && window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/subs/' + subId).remove(); } catch(e){}
+  if (window._activeTab === subId) switchDomTab(window._domMainCode); // offenen Tab schließen → Hauptsub
+  if (typeof renderDomTabs === 'function') renderDomTabs();
+}
+
+// Gate: gesperrte Sub-Beziehung (Status != active) → Dom sieht Upsell/Freischalten, Sub sieht Warten.
+function domSubEnforceGate(status) {
+  const ov = document.getElementById('domSubGate');
+  if (!ov) return;
+  const isDomT = window._isDomTab, isSubT = window._isSubStrand;
+  if ((!isDomT && !isSubT) || status === 'active') { ov.classList.remove('open'); return; }
+  const tEl = document.getElementById('domSubGateTitle');
+  const bEl = document.getElementById('domSubGateBody');
+  const btn = document.getElementById('domSubGateBtn');
+  if (isDomT) {
+    if (tEl) tEl.textContent = 'Zusatz-Abo für diese Sub';
+    if (bEl) bEl.textContent = 'Diese Sub ist noch nicht freigeschaltet. Im fertigen Stand schaltest du sie per Zusatz-Abo frei — zum Testen geht es direkt per Knopf.';
+    if (btn) { btn.style.display = ''; btn.textContent = 'Zum Testen freischalten'; }
+  } else {
+    if (tEl) tEl.textContent = 'Wartet auf Freischaltung';
+    if (bEl) bEl.textContent = 'Dein Dom muss diese Beziehung noch freischalten. Sobald das passiert ist, erscheinen hier deine Aufgaben.';
+    if (btn) btn.style.display = 'none';
+  }
+  ov.classList.add('open');
+}
+
+// „Zum Testen freischalten" (Dom): Beziehung auf aktiv setzen (später durch den Add-on-Kauf ersetzt).
+function domSubUnlock() {
+  if (!db || !syncCode || !window._isDomTab) return;
+  try { db.ref('strands/' + syncCode + '/status').set('active'); } catch(e){}
+  try { if (window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/subs/' + syncCode + '/status').set('active'); } catch(e){}
+  const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
 }
 
 function setRole(role) {
@@ -3132,6 +3183,8 @@ function initSync(code, opts) {
       if (data && data.mainCode) window._strandMainCode = data.mainCode;   // B7: Ziel für den Premium-Mirror in die Registry
       mhEnforceStrandLock(data && data.status);
     }
+    // Dom-Mehr-Sub: Gate für gesperrte Sub-Tabs (Dom) bzw. Warten-Screen (Sub).
+    if (window._isDomTab || window._isSubStrand) { if (typeof domSubEnforceGate === 'function') domSubEnforceGate(data && data.status); }
     if (localWriting) return;
     window._rolesSince = (data && data.rolesSince) ? data.rolesSince : null;
     window._strandRegistry = (data && data.strandRegistry) ? data.strandRegistry : {}; // Mehr-Herren: Liste der Neben-Stränge
@@ -3497,13 +3550,13 @@ function updateScores() {
   document.getElementById('scoreTotal').style.color = total >= 0 ? 'var(--green)' : 'var(--red)';
 
   const clamped = Math.max(0, total);
-  const pct = Math.min(100, Math.round((clamped / goalWeek) * 100));
+  const pct = goalWeek > 0 ? Math.min(100, Math.round((clamped / goalWeek) * 100)) : 0; // /0 vermeiden (kein Ziel → leerer Balken)
   const barEl = document.getElementById('weekRewardBar');
   const lblEl = document.getElementById('weekRewardLabel');
   const chkEl = document.getElementById('weekRewardCheck');
   if (barEl) barEl.style.width = pct + '%';
   if (lblEl) lblEl.textContent = clamped + ' / ' + goalWeek + ' ' + t('points');
-  if (chkEl) chkEl.innerHTML = clamped >= goalWeek ? SVG.check : '';
+  if (chkEl) chkEl.innerHTML = (goalWeek > 0 && clamped >= goalWeek) ? SVG.check : '';
   // Update week reward title with custom name
   const wrT = document.querySelector('.week-reward-title span:first-child');
   if (wrT) wrT.innerHTML = SVG.gift + ' ' + (rewardWeekName || t('weekReward'));
@@ -3748,7 +3801,7 @@ function saveGoals() {
 }
 function loadGoals(data) {
   const g = (data && data.goals) || (() => { try { return JSON.parse(localStorage.getItem('pflichten_goals')); } catch(e) { return null; } })();
-  if (g) { goalWeek = g.week || 0; goalMonth2 = g.month2 || 0; }
+  goalWeek = (g && g.week) || 0; goalMonth2 = (g && g.month2) || 0; // immer setzen → kein Leak zwischen Tabs/Beziehungen
   const el1 = document.getElementById('goalWeekInput');
   const el3 = document.getElementById('goalMonth2Input');
   if (el1 && !el1.matches(':focus')) el1.value = goalWeek;
@@ -3767,7 +3820,7 @@ function saveRewardNames() {
 }
 function loadRewardNames(data) {
   const r = (data && data.rewardNames) || (() => { try { return JSON.parse(localStorage.getItem('pflichten_rewardNames')); } catch(e) { return null; } })();
-  if (r) { rewardWeekName = r.week || ''; rewardMonth2Name = r.month2 || ''; }
+  rewardWeekName = (r && r.week) || ''; rewardMonth2Name = (r && r.month2) || ''; // immer setzen → kein Leak zwischen Tabs/Beziehungen
   const el1 = document.getElementById('rewardWeekNameInput');
   const el3 = document.getElementById('rewardMonth2NameInput');
   if (el1 && !el1.matches(':focus')) el1.value = rewardWeekName;
