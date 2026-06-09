@@ -1388,9 +1388,10 @@ const I18N = {
     pricingBasicF4: 'Push-Benachrichtigungen',
     pricingBasicF5: 'Wochentags-Filter',
     pricingBasicF6: 'Wochen-Feedback',
+    pricingBasicF7: 'PIN-Schutz',
     pricingPremiumF1: 'Alles aus Basic',
     pricingPremiumF2: 'Foto-Beweise',
-    pricingPremiumF3: 'PIN-Schutz',
+    pricingPremiumF3: 'Dom/Sub-Rollen',
     pricingPremiumF4: 'Monatsübersicht',
     pricingPremiumF5: 'Detaillierte Charts',
     pricingPremiumF6: 'PDF Export',
@@ -1664,9 +1665,10 @@ const I18N = {
     pricingBasicF4: 'Push notifications',
     pricingBasicF5: 'Weekday filters',
     pricingBasicF6: 'Weekly feedback',
+    pricingBasicF7: 'PIN protection',
     pricingPremiumF1: 'Everything in Basic',
     pricingPremiumF2: 'Photo proofs',
-    pricingPremiumF3: 'PIN protection',
+    pricingPremiumF3: 'Dom/Sub roles',
     pricingPremiumF4: 'Monthly overview',
     pricingPremiumF5: 'Detailed charts',
     pricingPremiumF6: 'PDF export',
@@ -2038,8 +2040,8 @@ function localRoleKey(code) { return 'devotion_role_' + (code || syncCode || '')
 function loadLocalRole(code) { try { return localStorage.getItem(localRoleKey(code)); } catch(e) { return null; } }
 function saveLocalRole(code, role) { try { localStorage.setItem(localRoleKey(code), role); } catch(e) {} }
 
-function isDom() { return currentRole === 'dom'; }
-function isSub() { return currentRole === 'sub'; }
+function isDom() { return currentRole === 'dom' && canUse('roles'); }
+function isSub() { return currentRole === 'sub' && canUse('roles'); }
 
 function setRole(role) {
   if (role !== 'dom' && role !== 'sub' && role !== 'none') return;
@@ -2068,7 +2070,8 @@ function loadRole() {
       if (remote !== currentRole) { currentRole = remote; saveLocalRole(syncCode, remote); }
       applyRoleUI();
     } else if (!currentRole) {
-      showRoleSelect();           // weder lokal noch remote → einmalig abfragen
+      if (canUse('roles')) showRoleSelect();  // Rollen-Feature verfügbar → abfragen
+      else applyRoleUI();                      // sonst symmetrisch (kein Gating-Screen)
     } else {
       currentRef.child('roles/' + deviceId).set(currentRole); // lokal vorhanden → remote nachziehen
       applyRoleUI();
@@ -2154,11 +2157,19 @@ function applyChosenRole(role) {
     }
   }
   setRole(role);
+  // Grandfathering-Marker: nur beim allerersten Setzen einer Rolle in dieser Paarung.
+  if (currentRef && (role === 'dom' || role === 'sub') && !window._rolesSince) {
+    const andere = window._pairRoles ? Object.keys(window._pairRoles).filter(k => k !== deviceId).length : 0;
+    if (andere === 0) currentRef.child('rolesSince').set(Date.now());
+  }
   const el = document.getElementById('roleSelectScreen');
   if (el) el.classList.add('hidden');
   if (typeof render === 'function') render();
 }
-function openRoleChange() { showRoleSelect(); } // Rolle nachträglich ändern
+function openRoleChange() {
+  if (!canUse('roles')) { showPricing(); return; } // Rollen = Premium-Feature
+  showRoleSelect();
+}
 // Ein-Klick-Korrektur aus einem Fehlzustand (2× Sub → Dom werden; 2× Dom → Sub werden)
 function roleStateAction() {
   if (window._roleStateTarget === 'dom') openRoleChange();
@@ -2301,6 +2312,7 @@ function initSync(code) {
   currentRef.on('value', (snapshot) => {
     if (localWriting) return;
     const data = snapshot.val();
+    window._rolesSince = (data && data.rolesSince) ? data.rolesSince : null;
     // Server ohne Aufgaben (leer ODER nur Basis-Felder nach versehentlichem Löschen)? Dann erst
     // den lokalen Stand dieses Geräts zurückspielen, falls vorhanden.
     const serverHasTasks = data && data.tasks && (Array.isArray(data.tasks) ? data.tasks.length > 0 : Object.keys(data.tasks).length > 0);
@@ -4389,7 +4401,7 @@ function updatePricingDisplay() {
 
   // Feature lists
   const basicFeatures = document.getElementById('pricingBasicFeatures');
-  basicFeatures.innerHTML = [1,2,3,4,5,6].map(i => '<li>' + t('pricingBasicF' + i) + '</li>').join('');
+  basicFeatures.innerHTML = [1,2,3,4,5,6,7].map(i => '<li>' + t('pricingBasicF' + i) + '</li>').join('');
 
   const premFeatures = document.getElementById('pricingPremiumFeatures');
   premFeatures.innerHTML = [1,2,3,4,5,6,7].map(i => '<li>' + t('pricingPremiumF' + i) + '</li>').join('');
@@ -4695,9 +4707,17 @@ function canUse(feature) {
   if (currentPlan === 'premium') {
     return true;
   }
-  // Free / trial / basic: basic features only, ads shown
-  const premiumFeatures = ['photos', 'pin', 'monthView', 'charts', 'export'];
+  // PIN: ab Basic (Trial NICHT)
+  if (feature === 'pin') return currentPlan === 'basic';
+  // Dom/Sub-Rollen: im Trial testbar; Basic nur als Bestandspaar (grandfathered)
+  if (feature === 'roles') return currentPlan === 'trial' || rolesGrandfathered();
+  // Übrige Premium-Features: nur Premium
+  const premiumFeatures = ['photos', 'monthView', 'charts', 'export'];
   return !premiumFeatures.includes(feature);
+}
+function rolesGrandfathered() {
+  // Bestandspaare (Rolle vor Gating-Einführung gesetzt) behalten Rollen in jedem Plan.
+  return !!(window._pairRoles && Object.keys(window._pairRoles).length > 0) && !window._rolesSince;
 }
 
 function applyFeatureGating() {
@@ -4759,6 +4779,7 @@ function applyFeatureGating() {
 
   // Ads: show for free users, hide for premium
   refreshAdsState();
+  if (typeof applyRoleUI === 'function') applyRoleUI();
 }
 
 // Reset pricing buttons when page is restored from back-forward cache
