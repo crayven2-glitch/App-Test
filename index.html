@@ -2837,7 +2837,8 @@ function renderDomTabs() {
   let html = tab(window._domMainCode, window._domMainSubName || 'Hauptsub');
   subs.forEach(s => { html += tab(s.subId, s.subName || 'Sub', { lock: (s.status === 'pending' || s.status === 'blocked'), removable: true }); });
   if (subs.length < MAX_DOM_SUBS - 1) {
-    html += '<button onclick="domAddSubPrompt()" aria-label="Sub hinzufügen" style="flex:0 0 auto;border:1px dashed var(--text2);border-radius:9px;padding:7px 12px;font-size:14px;cursor:pointer;background:none;color:var(--text2);">+</button>';
+    const addLabel = subs.length === 0 ? '+ Sub hinzufügen' : '+';
+    html += '<button onclick="domAddSubPrompt()" aria-label="Sub hinzufügen" style="flex:0 0 auto;border:1px dashed var(--text2);border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:none;color:var(--text2);">' + addLabel + '</button>';
   }
   el.innerHTML = html;
   el.style.display = 'flex';
