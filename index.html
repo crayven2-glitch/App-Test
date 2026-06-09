@@ -7,10 +7,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1a2e">
 <title>Devotion</title>
-<link rel="manifest" href="https://getdevotion.app/app/manifest.json">
-<link rel="icon" type="image/png" sizes="64x64" href="https://getdevotion.app/app/favicon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="https://getdevotion.app/app/icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="https://getdevotion.app/app/icon-180.png">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="64x64" href="./favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
 <!-- Google AdSense — Replace ca-pub-8203510215151522 with your AdSense publisher ID -->
 <script>
@@ -478,7 +478,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- ── Splash Screen ── -->
 <div id="splashScreen" style="position:fixed;inset:0;z-index:9999;background:#1a1a2e;transition:opacity .5s;">
-  <img src="https://getdevotion.app/app/devotion-splash-final.png" alt="Devotion" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+  <img src="./devotion-splash-final.png" alt="Devotion" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
 </div>
 
 <div class="sync-bar" id="syncBar"></div>
@@ -489,7 +489,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- LANGUAGE SELECT -->
 <div class="setup-screen hidden" id="langSelectScreen">
-  <div style="margin-bottom:16px;"><img src="https://getdevotion.app/app/devotion-triskele.png" alt="Devotion" style="width:100%;max-width:280px;"></div>
+  <div style="margin-bottom:16px;"><img src="./devotion-triskele.png" alt="Devotion" style="width:100%;max-width:280px;"></div>
   <h2 style="margin-bottom:8px;">Sprache / Language</h2>
   <p style="margin-bottom:32px;color:var(--text2);font-size:14px;">Wähle deine Sprache<br>Choose your language</p>
   <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;">
@@ -504,7 +504,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- AGE CHECK -->
 <div class="setup-screen hidden" id="ageCheckScreen">
-  <div class="setup-logo"><img src="https://getdevotion.app/app/icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
+  <div class="setup-logo"><img src="./icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
   <h2>Altersverifizierung</h2>
   <p>Diese App enthält Inhalte für Erwachsene. Bitte bestätige dein Alter, um fortzufahren.</p>
   <div class="setup-error" id="ageError"></div>
@@ -522,7 +522,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- ONBOARDING -->
 <div class="setup-screen hidden" id="onboardScreen1">
-  <div style="margin-bottom:8px;"><img src="https://getdevotion.app/app/devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
+  <div style="margin-bottom:8px;"><img src="./devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
   <h2>Willkommen bei Devotion</h2>
   <p>Die App für Paare, die ihre D/s-Dynamik strukturieren möchten. Erstelle Aufgaben, vergib Punkte und verfolge den Fortschritt — sicher und diskret.</p>
   <button class="setup-btn" onclick="showOnboard2()">Weiter</button>
@@ -533,7 +533,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 </div>
 
 <div class="setup-screen hidden" id="onboardScreen2">
-  <div style="margin-bottom:8px;"><img src="https://getdevotion.app/app/devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
+  <div style="margin-bottom:8px;"><img src="./devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
   <h2>Gemeinsam verbunden</h2>
   <p>Beide Partner nutzen denselben Code, um Aufgaben, Punkte und Belohnungen in Echtzeit zu teilen. Alles bleibt privat zwischen euch.</p>
   <button class="setup-btn" onclick="finishOnboarding()">Los geht's</button>
@@ -550,7 +550,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     <button id="setupLangEN" onclick="setLanguage('en')">EN</button>
   </div>
   <div class="setup-app-title" id="setupAppTitle">Devotion</div>
-  <div class="setup-logo"><img src="https://getdevotion.app/app/icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
+  <div class="setup-logo"><img src="./icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
   <h2>Verbindung einrichten</h2>
   <p>Gib einen gemeinsamen Code ein, damit beide Handys dieselben Daten sehen.</p>
   <div class="setup-error" id="setupError"></div>
@@ -688,6 +688,8 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     <div class="sub" contenteditable="true" spellcheck="false" id="headerSub" oninput="saveHeaderText()">Tippen zum Bearbeiten</div>
     <span id="roleBadge" class="role-badge" style="display:none" onclick="openRoleChange()" title="Rolle ändern"></span>
   </div>
+  <!-- DOM-MEHR-SUB: Tab-Leiste — der Dom schaltet zwischen seinen Subs um (Tab 1 = Hauptsub) -->
+  <div id="domTabsBar" style="display:none;gap:7px;padding:8px 16px 2px;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
   <!-- Trial Banner -->
   <div class="upgrade-banner" id="trialBanner" style="display:none;" onclick="showPricing()">
     <div>
@@ -2711,6 +2713,107 @@ function mhEnforceStrandPremium(isPrem) {
 // B7: Nebenherr tippt „Premium-Abo abschließen" → Pricing-Screen (für Nebenherr Premium-only, siehe showPricing).
 function mhStrandUpsell() { showPricing(); }
 
+// ══════════════ DOM-MEHR-SUB (Tabs) — Datenschicht ══════════════
+// Spiegelung des Mehr-Herren-Modus aus DOM-Sicht: ein Dom verwaltet mehrere Subs,
+// jede als eigener Tab. Tab 1 = Hauptpaarung (Hauptsub). Weitere Subs als
+// dom-verankerte Stränge: strands/{id} mit anchorRole:'dom', registriert unter
+// pflichten/{hauptCode}/subs/{subId}. Die Beziehungs-Engine (Aufgaben/Punkte/
+// Nachweise/Gate) kommt vom bestehenden Strang-System; nur die Rollen sind
+// gespiegelt — hier tritt die SUB bei (subDeviceId), nicht der Herr.
+const MAX_DOM_SUBS = 5; // inkl. Hauptsub (Tab 1) → bis zu 4 weitere
+window._domMainCode = window._domMainCode || null; // Code der Hauptpaarung (Tab 1)
+window._domSubs = window._domSubs || {};           // subId -> Registry-Eintrag (lokaler Spiegel)
+
+// Die Tab-Leiste sieht nur der Dom der Hauptpaarung (kein Nebenherr, keine Sub).
+function domTabsEligible() { return isMainHerr() && !!window._domMainCode; }
+
+// Weitere Subs (aus der Registry), beendete ausgeblendet, älteste zuerst.
+function domSubList() {
+  const reg = window._domSubs || {};
+  return Object.keys(reg).map(id => Object.assign({ subId: id }, reg[id]))
+    .filter(s => s && s.status !== 'ended')
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+}
+
+// 8-stelligen Beziehungs-Code erzeugen (ohne leicht verwechselbare Zeichen).
+function generateSubCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = ''; for (let i = 0; i < 8; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  return c;
+}
+
+// Registry der Dom-Subs live spiegeln (pflichten/{hauptCode}/subs).
+function watchDomSubs() {
+  if (!db || !window._domMainCode) return;
+  if (window._domSubsRef) { try { window._domSubsRef.off(); } catch(e){} }
+  window._domSubsRef = db.ref('pflichten/' + window._domMainCode + '/subs');
+  window._domSubsRef.on('value', snap => {
+    window._domSubs = snap.val() || {};
+    if (typeof renderDomTabs === 'function') renderDomTabs();
+  }, () => {});
+}
+
+// Neue Sub-Beziehung anlegen (leerer dom-verankerter Strang + Registry-Eintrag); Code zurückgeben.
+function createDomSub(name) {
+  if (!db || !window._domMainCode) return null;
+  if (domSubList().length >= MAX_DOM_SUBS - 1) return null;
+  const subId = generateSubCode();
+  const clean = String(name || '').trim().slice(0, 24);
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  db.ref('strands/' + subId).set({
+    createdAt: now, mainCode: window._domMainCode, anchorRole: 'dom',
+    domDeviceId: deviceId, subDeviceId: '', subName: clean, status: 'pending'
+  });
+  db.ref('pflichten/' + window._domMainCode + '/subs/' + subId).set({
+    subName: clean, createdAt: now, status: 'pending', premium: false
+  });
+  try { trackEvent('dom_sub_create', {}); } catch(e){}
+  return subId;
+}
+
+// Tab-Leiste rendern: Tab 1 = Hauptsub (Hauptpaarung), dann die weiteren Subs, dann „+".
+function renderDomTabs() {
+  const el = document.getElementById('domTabsBar');
+  if (!el) return;
+  if (!domTabsEligible()) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const subs = domSubList();
+  const active = window._activeTab || window._domMainCode;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const tab = (id, label, opt) => {
+    opt = opt || {};
+    const on = active === id;
+    const bg = on ? 'var(--accent)' : 'var(--surface2)';
+    const col = on ? '#fff' : 'var(--text)';
+    const ico = opt.lock ? '🔒 ' : '';
+    return '<button onclick="switchDomTab(\'' + id + '\')" style="flex:0 0 auto;border:none;border-radius:9px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:' + bg + ';color:' + col + ';opacity:' + (opt.lock && !on ? '.6' : '1') + ';">' + ico + esc(label) + '</button>';
+  };
+  let html = tab(window._domMainCode, 'Hauptsub');
+  subs.forEach(s => { html += tab(s.subId, s.subName || 'Sub', { lock: (s.status === 'pending' || s.status === 'blocked') }); });
+  if (subs.length < MAX_DOM_SUBS - 1) {
+    html += '<button onclick="domAddSubPrompt()" aria-label="Sub hinzufügen" style="flex:0 0 auto;border:1px dashed var(--text2);border-radius:9px;padding:7px 12px;font-size:14px;cursor:pointer;background:none;color:var(--text2);">+</button>';
+  }
+  el.innerHTML = html;
+  el.style.display = 'flex';
+}
+
+// Tab wechseln: lädt die Beziehung dieses Tabs (Hauptpaarung oder dom-verankerter Sub-Strang).
+function switchDomTab(code) {
+  if (!code || code === syncCode) return;
+  window._activeTab = code;
+  if (code === window._domMainCode) initSync(code);      // zurück zur Hauptpaarung
+  else initSync(code, { domTab: true });                 // Dom öffnet seinen eigenen Sub-Strang
+}
+
+// „+ Sub": Namen erfragen, Beziehung anlegen, Beitritts-Code zum Weitergeben zeigen.
+function domAddSubPrompt() {
+  if (domSubList().length >= MAX_DOM_SUBS - 1) { alert('Maximal ' + MAX_DOM_SUBS + ' Subs (inkl. Hauptsub).'); return; }
+  const name = prompt('Name der neuen Sub (z. B. „Lisa"):', '');
+  if (name === null) return;
+  const subId = createDomSub(name);
+  if (!subId) { alert('Konnte die Sub nicht anlegen.'); return; }
+  alert('Neue Sub angelegt.\n\nBeitritts-Code für ' + ((name || '').trim() || 'die Sub') + ':\n\n' + subId + '\n\nGib ihn der Sub — sie tippt ihn beim Einrichten ein.');
+}
+
 function setRole(role) {
   if (role !== 'dom' && role !== 'sub' && role !== 'none') return;
   currentRole = role;
@@ -2724,7 +2827,7 @@ function setRole(role) {
 // und fragt sie ab, falls weder lokal noch remote gesetzt (= auch Bestands-Migration).
 function loadRole() {
   if (!currentRef) return;
-  if (window._isNebenherr) { currentRole = 'dom'; applyRoleUI(); return; } // Nebenherr ist Dom seines Strangs — keine Rollen-Auswahl
+  if (window._isNebenherr || window._isDomTab) { currentRole = 'dom'; applyRoleUI(); return; } // Nebenherr/Dom-Tab = Dom seiner Beziehung — keine Rollen-Auswahl
   // Auf ALLE Rollen der Paarung lauschen (nicht nur die eigene), um Fehlzustände
   // (2× Dom / 2× Sub) zu erkennen und den Auswahl-Screen zu steuern.
   currentRef.child('roles').on('value', snap => {
@@ -2929,6 +3032,7 @@ function applyRoleUI() {
   }
 
   if (typeof syncStrandSubscriptions === 'function') syncStrandSubscriptions(); // B4: bei Rollenwechsel Hub-Abos angleichen
+  if (typeof renderDomTabs === 'function') renderDomTabs(); // Dom-Mehr-Sub: Tab-Leiste nach Rollen-Update aktualisieren
   if (typeof render === 'function' && document.getElementById('taskList')) render();
 }
 
@@ -2956,6 +3060,8 @@ function restoreFromLocalIfAny(code) {
 function initSync(code, opts) {
   opts = opts || {};
   const isStrand = !!opts.strand; // Nebenherr-Modus: gegen strands/{code} statt pflichten/{code}
+  const isDomTab = !!opts.domTab; // Dom-Mehr-Sub: Dom öffnet eigenen Sub-Strang (strands/-Pfad, aber KEIN Nebenherr)
+  const usesStrandPath = isStrand || isDomTab;
   // Reset localStorage when switching to a different code
   const previousCode = syncCode || ((() => { try { return localStorage.getItem('pflichten_sync_code_2'); } catch(e) { return null; } })());
   if (previousCode && previousCode !== code) {
@@ -2968,7 +3074,7 @@ function initSync(code, opts) {
   }
   syncCode = code;
   saveCodeLocally(code);
-  currentRole = isStrand ? 'dom' : loadLocalRole(code); // Nebenherr = Dom seines Strangs; sonst Paarungs-Rolle
+  currentRole = (isStrand || isDomTab) ? 'dom' : loadLocalRole(code); // Nebenherr/Dom-Tab = Dom; sonst Paarungs-Rolle
   document.getElementById('currentCodeDisplay').textContent = code;
 
   try {
@@ -2985,8 +3091,9 @@ function initSync(code, opts) {
   }
 
   if (currentRef) currentRef.off();
-  currentRef = db.ref((isStrand ? 'strands/' : 'pflichten/') + code);
-  window._isNebenherr = isStrand;
+  currentRef = db.ref((usesStrandPath ? 'strands/' : 'pflichten/') + code);
+  window._isNebenherr = isStrand;      // Dom-Tab ist KEIN Nebenherr → Tab-Leiste + normale Dom-UI bleiben
+  window._isDomTab = isDomTab;
   trackEvent('login', { method: isStrand ? 'strand_code' : 'pair_code' });
 
   currentRef.on('value', (snapshot) => {
@@ -3031,8 +3138,8 @@ function initSync(code, opts) {
   });
 
   document.getElementById('setupScreen').classList.add('hidden');
-  // Save deviceId to pair code data
-  if (db) db.ref('pflichten/' + code + '/deviceId').set(deviceId);
+  // Save deviceId to pair code data (NICHT im Dom-Tab — dort ist code eine subId unter strands/)
+  if (db && !isDomTab) db.ref('pflichten/' + code + '/deviceId').set(deviceId);
   loadHeaderText(null);
   loadGoals(null);
   loadPin();
@@ -3045,6 +3152,9 @@ function initSync(code, opts) {
     setupPush();
   }
   updateNotifBtn();
+  // Dom-Mehr-Sub: in der Hauptpaarung den Tab-Anker setzen + Sub-Registry spiegeln; Tab-Leiste rendern.
+  if (!usesStrandPath) { window._domMainCode = code; if (!window._activeTab) window._activeTab = code; if (typeof watchDomSubs === 'function') watchDomSubs(); }
+  if (typeof renderDomTabs === 'function') renderDomTabs();
 }
 
 // Wendet einen Sync-Snapshot auf den lokalen Zustand an (ausgelagert aus dem on('value')-Handler)
@@ -5018,7 +5128,7 @@ function exportStatsPDF() {
 }
 
 // ── SUBSCRIPTION SYSTEM ──
-const API_BASE = 'https://getdevotion.app/app/api/';
+const API_BASE = 'api/';
 let currentPlan = 'trial'; // trial, basic, premium
 let subStatus = null; // null, active, canceled, past_due
 let trialDaysLeft = 30;
