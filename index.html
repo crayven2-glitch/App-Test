@@ -719,6 +719,8 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
   <div class="day-tabs" id="dayTabs"></div>
   <div class="task-list" id="taskList"></div>
+  <!-- MEHR-HERREN Baustein 6: Safeword-Meldung an den Hauptherrn (Sub hat einen Strang pausiert) -->
+  <div id="mhSafewordBanner" style="display:none;padding:0 16px;"></div>
   <!-- MEHR-HERREN Baustein 4: Sub-Hub (Variante A — eigener Bereich, nach Herr gruppiert, read-only) -->
   <div id="subHubSection" style="display:none;padding:0 16px 4px;"></div>
   <div class="remarks-area">
@@ -1037,6 +1039,16 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
 </div>
 
+<!-- MEHR-HERREN Baustein 6: Neutraler Sperr-Overlay für die Nebenherr-App (Not-Aus live).
+     Zeigt NIE, dass andere Herren der Grund sind (§5) — nur „derzeit nicht aktiv". -->
+<div class="modal-overlay" id="mhStrandLock" style="z-index:9999;">
+  <div class="modal" style="text-align:center;padding-top:30px;">
+    <div style="color:var(--text2);display:flex;justify-content:center;margin-bottom:12px;"><svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+    <h3 id="mhStrandLockTitle" style="margin:0 0 8px;">Derzeit nicht aktiv</h3>
+    <p id="mhStrandLockBody" style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0;">Aktuell ist kein Slot frei. Bitte später erneut versuchen.</p>
+  </div>
+</div>
+
 <!-- PIN MODAL -->
 <div class="modal-overlay" id="pinModal">
   <div class="modal" style="text-align:center; padding-top:28px;">
@@ -1207,6 +1219,17 @@ const I18N = {
     mhHubWaiting: 'Dieser Herr hat noch keine Aufgaben angelegt.',
     mhHubTitleHaupt: 'Aufsicht: Aufgaben deiner Herren',
     mhHubEnd: 'Beenden',
+    mhHubMarkHint: 'Tippen: Erledigt → Verpasst → N/A',
+    mhSafewordPause: 'Pausieren',
+    mhSafewordConfirm: 'Strang von {herr} jetzt pausieren? Der Herr wird sofort gesperrt und dein Hauptherr wird informiert.',
+    mhSafewordDone: 'Pausiert. Dein Hauptherr wurde informiert ({herr}).',
+    mhSafewordPushTitle: 'Safeword: Strang pausiert',
+    mhSafewordBannerTitle: 'Sub hat pausiert',
+    mhSafewordBannerBody: 'Deine Sub hat den Strang von {herr} per Safeword pausiert. Bitte nachfragen, was los ist.',
+    mhSafewordAck: 'Quittieren',
+    mhSafewordResume: 'Fortsetzen',
+    mhStrandLockTitle: 'Derzeit nicht aktiv',
+    mhStrandLockBody: 'Aktuell ist kein Slot frei. Bitte später erneut versuchen.',
     rolePremiumLocked: 'Premium-Feature',
     roleChangePremium: 'In Premium',
     settingsTitleDom: 'Aufgaben verwalten',
@@ -1513,6 +1536,17 @@ const I18N = {
     mhHubWaiting: 'This master has not created any tasks yet.',
     mhHubTitleHaupt: 'Oversight: your masters’ tasks',
     mhHubEnd: 'End',
+    mhHubMarkHint: 'Tap: Done → Missed → N/A',
+    mhSafewordPause: 'Pause',
+    mhSafewordConfirm: 'Pause {herr}’s strand now? This master is blocked immediately and your main master is notified.',
+    mhSafewordDone: 'Paused. Your main master has been notified ({herr}).',
+    mhSafewordPushTitle: 'Safeword: strand paused',
+    mhSafewordBannerTitle: 'Sub paused a strand',
+    mhSafewordBannerBody: 'Your sub used the safeword to pause {herr}’s strand. Please check in on what happened.',
+    mhSafewordAck: 'Acknowledge',
+    mhSafewordResume: 'Resume',
+    mhStrandLockTitle: 'Currently inactive',
+    mhStrandLockBody: 'No slot is available right now. Please try again later.',
     rolePremiumLocked: 'Premium feature',
     roleChangePremium: 'Get Premium',
     settingsTitleDom: 'Manage tasks',
@@ -2151,12 +2185,16 @@ function renderStrandList() {
     if (st === 'active') actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;" onclick="pauseStrand(\'' + s.strandId + '\')">' + t('mhPause') + '</button>';
     actions += '<button class="notif-btn" style="padding:5px 10px;font-size:12px;border-color:var(--red);color:var(--red);" onclick="endStrand(\'' + s.strandId + '\')">' + t('mhEnd') + '</button>';
     const codeLine = (st === 'pending') ? '<div style="font-size:11px;color:var(--accent);margin-top:4px;">' + t('mhShareCode') + ': <b>' + s.strandId + '</b></div>' : '';
+    // B6: Hinweis, wenn die Sub diesen Strang per Safeword pausiert hat (noch nicht quittiert).
+    const swLine = (s.safeword && s.safeword.by === 'sub' && !s.safeword.ack)
+      ? '<div style="font-size:11px;color:var(--yellow);margin-top:4px;display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' + t('mhSafewordBannerTitle') + '</div>'
+      : '';
     return '<div style="background:var(--surface2);border-radius:10px;padding:9px 11px;">'
       + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'
       + '<div style="min-width:0;"><div style="font-size:13.5px;font-weight:600;">' + (s.herrName || t('mhUnnamedHerr')) + '</div>'
       + '<div style="font-size:11px;color:var(--text2);">' + t('mhStatus_' + st) + '</div></div>'
       + '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">' + actions + '</div></div>'
-      + codeLine + '</div>';
+      + swLine + codeLine + '</div>';
   }).join('');
 }
 function updateMehrHerrenUI() {
@@ -2285,7 +2323,9 @@ function renderSubHub() {
       + '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;"></span>'
       + '<span style="font-size:13px;font-weight:600;">' + esc(name) + '</span>'
       + '<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:rgba(78,204,163,.18);color:var(--green);">' + esc(t('mhHubActive')) + '</span>'
-      + (isHaupt ? '<button onclick="endStrand(\'' + s.strandId + '\')" style="margin-left:auto;font-size:10.5px;padding:2px 9px;border-radius:7px;background:none;border:1px solid var(--red);color:var(--red);cursor:pointer;">' + esc(t('mhHubEnd')) + '</button>' : '')
+      + (isHaupt
+          ? '<button onclick="endStrand(\'' + s.strandId + '\')" style="margin-left:auto;font-size:10.5px;padding:2px 9px;border-radius:7px;background:none;border:1px solid var(--red);color:var(--red);cursor:pointer;">' + esc(t('mhHubEnd')) + '</button>'
+          : '<button onclick="mhSubPauseStrand(\'' + s.strandId + '\')" style="margin-left:auto;font-size:10.5px;padding:2px 9px;border-radius:7px;background:none;border:1px solid var(--yellow);color:var(--yellow);cursor:pointer;">' + esc(t('mhSafewordPause')) + '</button>')
       + '</div>';
     if (!data) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">…</div>'; return; }
     const stasks = Array.isArray(data.tasks) ? data.tasks : (data.tasks ? Object.values(data.tasks) : []);
@@ -2319,25 +2359,203 @@ function renderSubHub() {
     const dayTasks = stasks.filter(tk => mhTaskActiveOnDay(tk, selectedDay));
     if (!dayTasks.length) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">' + esc(t('mhHubNoTasksToday')) + '</div>'; return; }
     html += '<div style="margin:0 0 12px;">';
+    // B6: Die Sub darf im Hub melden/erledigen (Status zyklisch wie die Wochenansicht) + Nachweis hochladen.
+    // Der Hauptherr (Aufsicht) bleibt read-only — er sieht alles, bearbeitet aber nichts.
+    const interactive = !isHaupt;
     dayTasks.forEach(tk => {
       const status = dayEntries[tk.id] || dayEntries[String(tk.id)] || '';
       const done = status === 'done' || status === 'reported';
       const missed = status === 'missed';
+      const na = status === 'na';
       const dot = done
         ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
         : missed
           ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
-          : '';
-      const ring = done ? 'var(--green)' : missed ? 'var(--red)' : '#2c3a5e';
+          : na ? '<span style="font-size:9px;font-weight:700;color:var(--text2);">N/A</span>' : '';
+      const ring = done ? 'var(--green)' : missed ? 'var(--red)' : na ? 'var(--text2)' : '#2c3a5e';
+      const circle = '<div style="width:24px;height:24px;border-radius:50%;border:2px solid ' + ring + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + dot + '</div>';
+      const statusEl = interactive
+        ? '<button onclick="mhCycleStrandStatus(\'' + s.strandId + '\',' + tk.id + ')" style="background:none;border:none;padding:0;cursor:pointer;" aria-label="' + esc(t('mhHubMarkHint')) + '" title="' + esc(t('mhHubMarkHint')) + '">' + circle + '</button>'
+        : circle;
+      let proofEl = '';
+      if (interactive && tk.proofRequired) {
+        const pr = mhGetStrandProof(s.strandId, weekKey, selectedDay, tk.id);
+        const hasP = !!(pr && (pr.photo || pr.note));
+        proofEl = '<button onclick="mhOpenStrandProof(\'' + s.strandId + '\',' + tk.id + ')" style="width:30px;height:30px;border-radius:8px;border:2px solid ' + (hasP ? 'var(--green)' : 'var(--text2)') + ';background:' + (hasP ? 'rgba(78,204,163,0.15)' : 'none') + ';color:var(--text2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;" title="' + esc(t('proofTitle')) + '">' + SVG.cam + '</button>';
+      }
       html += '<div style="background:var(--surface);border-radius:10px;border-left:3px solid ' + color + ';margin-bottom:6px;padding:8px 11px;display:flex;align-items:center;gap:10px;">'
         + '<div style="flex:1;min-width:0;"><div style="font-size:12.5px;">' + esc(tk.name) + '</div>'
         + '<div style="font-size:10px;color:var(--text2);margin-top:2px;">+' + (tk.plus||0) + ' / -' + (tk.minus||0) + '</div></div>'
-        + '<div style="width:24px;height:24px;border-radius:50%;border:2px solid ' + ring + ';display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + dot + '</div></div>';
+        + proofEl + statusEl + '</div>';
     });
     html += '</div>';
   });
   el.innerHTML = html;
   el.style.display = '';
+  mhRenderSafewordBanner();
+}
+
+// ══════════════ MEHR-HERREN Baustein 6 ══════════════
+// Erledigen + Nachweis-Rücklauf aus dem Hub (Sub schreibt cross-strang in strands/{id}),
+// Safeword (Sub pausiert pro Strang + Meldung an den Hauptherrn) und Live-Not-Aus
+// (Nebenherr-App sperrt bei blocked/ended neutral).
+
+// Nachweis eines Strangs lesen (gespiegelt aus getProof, aber auf window._strandData).
+function mhGetStrandProof(strandId, weekKey, dayIdx, taskId) {
+  const sd = window._strandData[strandId];
+  if (!sd || !sd.weekData) return null;
+  const wd = sd.weekData[weekKey];
+  if (!wd || !wd.proofs) return null;
+  const dp = wd.proofs[dayIdx] || wd.proofs[String(dayIdx)];
+  if (!dp) return null;
+  return dp[taskId] || dp[String(taskId)] || null;
+}
+
+// B6: Status einer Strang-Aufgabe zyklisch setzen — wie cycleStatus, aber direkt nach
+// strands/{id}/weekData/{weekKey}/days/{day}/{taskId}. Nur die Sub ruft das auf (Hub interaktiv).
+function mhCycleStrandStatus(strandId, taskId) {
+  if (!db || window._isNebenherr) return;
+  const weekKey = getWeekKey(currentWeekOffset);
+  const sd = window._strandData[strandId];
+  if (!sd) return;
+  const wd = sd.weekData && sd.weekData[weekKey];
+  const day = (wd && wd.days && (wd.days[selectedDay] || wd.days[String(selectedDay)])) || {};
+  const current = day[taskId] || day[String(taskId)] || '';
+  const cycle = ['', 'done', 'missed', 'na'];
+  let idx = cycle.indexOf(current); if (idx === -1) idx = 0;
+  const next = cycle[(idx + 1) % cycle.length];
+  // Optimistisch lokal spiegeln, sofort neu rendern (der .on-Listener zieht eh nach).
+  sd.weekData = sd.weekData || {};
+  sd.weekData[weekKey] = sd.weekData[weekKey] || { days: {} };
+  sd.weekData[weekKey].days = sd.weekData[weekKey].days || {};
+  sd.weekData[weekKey].days[selectedDay] = sd.weekData[weekKey].days[selectedDay] || {};
+  if (next === '') delete sd.weekData[weekKey].days[selectedDay][taskId];
+  else sd.weekData[weekKey].days[selectedDay][taskId] = next;
+  renderSubHub();
+  const ref = db.ref('strands/' + strandId + '/weekData/' + weekKey + '/days/' + selectedDay + '/' + taskId);
+  (next === '' ? ref.remove() : ref.set(next)).catch(e => console.error('Strang-Status schreiben fehlgeschlagen:', e));
+}
+
+// B6: Nachweis-Modal aus dem Hub öffnen (Cross-Strang-Kontext setzen, dann das bestehende Modal nutzen).
+function mhOpenStrandProof(strandId, taskId) {
+  if (window._isNebenherr) return;
+  window._mhProofStrand = strandId;
+  openProofModal(taskId);
+}
+
+// B6: Nachweis aus dem Hub speichern — Foto nach proofs/{strandId}/..., Daten nach strands/{id}/weekData.
+async function mhSaveStrandProof(strandId, weekKey, note) {
+  const tid = proofTaskId;
+  let photo = proofPhotoData;
+  if (proofPhotoBlob && storage) {
+    const btn = document.getElementById('proofSaveBtn');
+    const origText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    try {
+      const path = 'proofs/' + strandId + '/' + weekKey + '/' + selectedDay + '/' + tid + '_' + Date.now() + '.jpg';
+      const ref = storage.ref(path);
+      await ref.put(proofPhotoBlob, { contentType: 'image/jpeg' });
+      photo = await ref.getDownloadURL();
+    } catch (err) { console.error('Strang-Nachweis Upload fehlgeschlagen, base64-Fallback:', err); }
+    proofPhotoBlob = null;
+    if (btn) { btn.disabled = false; btn.textContent = origText; }
+  }
+  let val = null;
+  if (note || photo) { val = {}; if (note) val.note = note; if (photo) val.photo = photo; }
+  try {
+    const ref = db.ref('strands/' + strandId + '/weekData/' + weekKey + '/proofs/' + selectedDay + '/' + tid);
+    await (val ? ref.set(val) : ref.remove());
+  } catch (e) { console.error('Strang-Nachweis speichern fehlgeschlagen:', e); }
+  // Optimistisch lokal spiegeln
+  try {
+    const sd = window._strandData[strandId];
+    if (sd) {
+      sd.weekData = sd.weekData || {};
+      sd.weekData[weekKey] = sd.weekData[weekKey] || { days: {} };
+      sd.weekData[weekKey].proofs = sd.weekData[weekKey].proofs || {};
+      sd.weekData[weekKey].proofs[selectedDay] = sd.weekData[weekKey].proofs[selectedDay] || {};
+      if (val) sd.weekData[weekKey].proofs[selectedDay][tid] = val;
+      else delete sd.weekData[weekKey].proofs[selectedDay][tid];
+    }
+  } catch (e) {}
+  renderSubHub();
+  closeProofModal();
+}
+
+// B6 Safeword: Die Sub pausiert einen einzelnen Strang (Notbremse) + meldet es dem Hauptherrn.
+function mhSubPauseStrand(strandId) {
+  if (!db || window._isNebenherr) return;
+  const sd = window._strandData[strandId];
+  const herrName = (sd && sd.herrName) || t('mhUnnamedHerr');
+  if (!confirm(t('mhSafewordConfirm').replace('{herr}', herrName))) return;
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  const sw = { by: 'sub', at: now, herrName: herrName, ack: false };
+  // 1) Strang sperren (Nebenherr wird live neutral gesperrt) + Safeword markieren.
+  try { db.ref('strands/' + strandId + '/status').set('blocked'); } catch (e) {}
+  try { db.ref('strands/' + strandId + '/safeword').set(sw); } catch (e) {}
+  // 2) In der Registry des Hauptherrn spiegeln (für „Herren verwalten" + Banner).
+  if (syncCode) {
+    try { db.ref('pflichten/' + syncCode + '/strandRegistry/' + strandId + '/status').set('blocked'); } catch (e) {}
+    try { db.ref('pflichten/' + syncCode + '/strandRegistry/' + strandId + '/safeword').set(sw); } catch (e) {}
+    // 3) Push-Ping an den Hauptherrn (= Partner der Hauptpaarung) über den bestehenden lastActivity-Mechanismus.
+    //    Der Server pusht das jeweils ANDERE Gerät der Paarung — hier also den Hauptherrn.
+    //    (Exakte Push-Wortwahl pro Strang = B7/Server; das robuste In-App-Banner liefert den Kontext.)
+    try {
+      db.ref('pflichten/' + syncCode + '/lastActivity').set({
+        timestamp: now, device: deviceId,
+        taskName: t('mhSafewordPushTitle'),
+        taskStatus: 'safeword'
+      });
+    } catch (e) {}
+  }
+  alert(t('mhSafewordDone').replace('{herr}', herrName));
+  // Der Strang fällt durch das Listener-Update aus der aktiven Hub-Liste — Re-Render passiert automatisch.
+}
+
+// B6: Hauptherr quittiert die Safeword-Meldung (Banner verschwindet; der Strang bleibt pausiert bis er fortsetzt).
+function mhAckSafeword(strandId) {
+  if (!db) return;
+  try { db.ref('strands/' + strandId + '/safeword/ack').set(true); } catch (e) {}
+  if (syncCode) { try { db.ref('pflichten/' + syncCode + '/strandRegistry/' + strandId + '/safeword/ack').set(true); } catch (e) {} }
+  mhRenderSafewordBanner();
+  if (typeof renderStrandList === 'function') renderStrandList();
+}
+
+// B6: Banner beim Hauptherrn, sobald die Sub einen Strang per Safeword pausiert hat (unquittiert).
+function mhRenderSafewordBanner() {
+  const el = document.getElementById('mhSafewordBanner');
+  if (!el) return;
+  if (!isMainHerr()) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const flagged = strandList().filter(s => s.safeword && s.safeword.by === 'sub' && !s.safeword.ack);
+  if (!flagged.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.innerHTML = flagged.map(s => {
+    const name = esc(s.safeword.herrName || s.herrName || t('mhUnnamedHerr'));
+    return '<div style="background:rgba(245,197,24,0.14);border:1px solid var(--yellow);border-radius:12px;padding:11px 13px;margin:10px 0;">'
+      + '<div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--yellow);">'
+      + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+      + esc(t('mhSafewordBannerTitle')) + '</div>'
+      + '<div style="font-size:12.5px;color:var(--text);margin:5px 0 9px;">' + esc(t('mhSafewordBannerBody').replace('{herr}', name)) + '</div>'
+      + '<div style="display:flex;gap:7px;flex-wrap:wrap;">'
+      + '<button onclick="mhAckSafeword(\'' + s.strandId + '\')" style="font-size:11.5px;padding:5px 12px;border-radius:8px;background:none;border:1px solid var(--text2);color:var(--text2);cursor:pointer;">' + esc(t('mhSafewordAck')) + '</button>'
+      + '<button onclick="freigebenStrand(\'' + s.strandId + '\');mhAckSafeword(\'' + s.strandId + '\')" style="font-size:11.5px;padding:5px 12px;border-radius:8px;background:none;border:1px solid var(--green);color:var(--green);cursor:pointer;">' + esc(t('mhSafewordResume')) + '</button>'
+      + '</div></div>';
+  }).join('');
+  el.style.display = '';
+}
+
+// B6 Live-Not-Aus: In der Nebenherr-App den Zugang neutral sperren, sobald der Strang blocked/ended ist.
+function mhEnforceStrandLock(status) {
+  if (!window._isNebenherr) return;
+  const ov = document.getElementById('mhStrandLock');
+  if (!ov) return;
+  if (status === 'blocked' || status === 'ended') {
+    const tEl = document.getElementById('mhStrandLockTitle'); if (tEl) tEl.textContent = t('mhStrandLockTitle');
+    const bEl = document.getElementById('mhStrandLockBody'); if (bEl) bEl.textContent = t('mhStrandLockBody');
+    ov.classList.add('open');
+  } else {
+    ov.classList.remove('open');
+  }
 }
 
 function setRole(role) {
@@ -2619,12 +2837,16 @@ function initSync(code, opts) {
   trackEvent('login', { method: isStrand ? 'strand_code' : 'pair_code' });
 
   currentRef.on('value', (snapshot) => {
-    if (localWriting) return;
     const data = snapshot.val();
+    // B6 Live-Not-Aus: Nebenherr-App sofort neutral sperren, sobald der Strang blocked/ended ist
+    // (auch während eines lokalen Schreibvorgangs — Sperre hat Vorrang).
+    if (window._isNebenherr) mhEnforceStrandLock(data && data.status);
+    if (localWriting) return;
     window._rolesSince = (data && data.rolesSince) ? data.rolesSince : null;
     window._strandRegistry = (data && data.strandRegistry) ? data.strandRegistry : {}; // Mehr-Herren: Liste der Neben-Stränge
     if (typeof updateMehrHerrenUI === 'function') updateMehrHerrenUI();
     if (typeof syncStrandSubscriptions === 'function') syncStrandSubscriptions(); // B4: Sub abonniert aktive Stränge
+    if (typeof mhRenderSafewordBanner === 'function') mhRenderSafewordBanner(); // B6: Hauptherr-Safeword-Meldung (auch bei pausierten Strängen)
     // Server ohne Aufgaben (leer ODER nur Basis-Felder nach versehentlichem Löschen)? Dann erst
     // den lokalen Stand dieses Geräts zurückspielen, falls vorhanden.
     const serverHasTasks = data && data.tasks && (Array.isArray(data.tasks) ? data.tasks.length > 0 : Object.keys(data.tasks).length > 0);
@@ -3862,12 +4084,21 @@ function getProof(weekKey, dayIdx, taskId) {
 }
 
 function openProofModal(taskId) {
-  if (!canUse('photos')) { showPricing(); return; }
+  // B6: aus dem Hub kann window._mhProofStrand gesetzt sein → Nachweis gehört zu einem Strang, nicht zur eigenen Paarung.
+  const mhStrand = window._mhProofStrand || null;
+  if (!mhStrand && !canUse('photos')) { showPricing(); return; }
   proofTaskId = taskId;
-  const task = tasks.find(t => t.id === taskId);
+  let task;
+  if (mhStrand) {
+    const sd = window._strandData[mhStrand];
+    const stasks = sd && (Array.isArray(sd.tasks) ? sd.tasks : (sd.tasks ? Object.values(sd.tasks) : []));
+    task = stasks && stasks.find(x => String(x.id) === String(taskId));
+  } else {
+    task = tasks.find(t => t.id === taskId);
+  }
   if (!task) return;
   const weekKey = getWeekKey(currentWeekOffset);
-  const proof = getProof(weekKey, selectedDay, taskId);
+  const proof = mhStrand ? mhGetStrandProof(mhStrand, weekKey, selectedDay, taskId) : getProof(weekKey, selectedDay, taskId);
   const pType = task.proofRequired || 'both';
 
   document.getElementById('proofTitle').textContent = t('proofTitle') + ': ' + task.name;
@@ -3892,6 +4123,7 @@ function closeProofModal() {
   proofTaskId = null;
   proofPhotoData = null;
   proofPhotoBlob = null;
+  window._mhProofStrand = null; // B6: Cross-Strang-Kontext immer zurücksetzen
 }
 
 function renderProofPhoto() {
@@ -3953,6 +4185,8 @@ function removeProofPhoto() {
 async function saveProof() {
   if (proofTaskId === null) return;
   const weekKey = getWeekKey(currentWeekOffset);
+  // B6: Nachweis aus dem Hub → in den Strang schreiben statt in die eigene Paarung.
+  if (window._mhProofStrand) { await mhSaveStrandProof(window._mhProofStrand, weekKey, document.getElementById('proofNote').value.trim()); return; }
   if (!weekData[weekKey]) weekData[weekKey] = { days:{}, remarks:'' };
   if (!weekData[weekKey].proofs) weekData[weekKey].proofs = {};
   if (!weekData[weekKey].proofs[selectedDay]) weekData[weekKey].proofs[selectedDay] = {};
