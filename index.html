@@ -1220,6 +1220,7 @@ const I18N = {
     joinHerrBtn: 'Als Herr beitreten',
     mhStrandNotFound: 'Kein Strang mit diesem Code gefunden.',
     mhStrandEnded: 'Dieser Strang wurde beendet.',
+    mhStrandCodeLen: 'Bitte den 8-stelligen Strang-Code eingeben.',
     setupOr: 'oder',
     setupGenerate: 'Neuen Code generieren',
     setupMinChars: 'Mindestens 4 Zeichen eingeben.',
@@ -1516,6 +1517,7 @@ const I18N = {
     joinHerrBtn: 'Join as master',
     mhStrandNotFound: 'No strand found for this code.',
     mhStrandEnded: 'This strand has ended.',
+    mhStrandCodeLen: 'Please enter the 8-character strand code.',
     setupOr: 'or',
     setupGenerate: 'Generate new code',
     setupMinChars: 'Enter at least 4 characters.',
@@ -2137,7 +2139,7 @@ function updateMehrHerrenUI() {
 }
 function joinAsNebenherr() {
   const raw = document.getElementById('setupCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if (raw.length < 4) { document.getElementById('setupError').textContent = t('setupMinChars'); return; }
+  if (raw.length < 8) { document.getElementById('setupError').textContent = t('mhStrandCodeLen'); return; }
   document.getElementById('setupError').textContent = '';
   try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } catch(e){}
   firebase.database().ref('strands/' + raw).once('value', snap => {
