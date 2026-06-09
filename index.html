@@ -1202,6 +1202,7 @@ const I18N = {
     mhStatus_ended: 'Beendet',
     mhHubTitle: 'Aufgaben von deinen weiteren Herren',
     mhHubActive: 'aktiv',
+    mhHubPointsWeek: 'Punkte diese Woche',
     mhHubNoTasksToday: 'Heute keine Aufgabe von diesem Herrn.',
     mhHubWaiting: 'Dieser Herr hat noch keine Aufgaben angelegt.',
     mhHubTitleHaupt: 'Aufsicht: Aufgaben deiner Herren',
@@ -1507,6 +1508,7 @@ const I18N = {
     mhStatus_ended: 'Ended',
     mhHubTitle: 'Tasks from your other masters',
     mhHubActive: 'active',
+    mhHubPointsWeek: 'points this week',
     mhHubNoTasksToday: 'No task from this master today.',
     mhHubWaiting: 'This master has not created any tasks yet.',
     mhHubTitleHaupt: 'Oversight: your masters’ tasks',
@@ -2215,6 +2217,23 @@ function mhTaskActiveOnDay(task, dayIndex) {
   return task.days.includes(dayIndex);
 }
 
+// B5: Wochenscore eines Strangs (ganze Woche Mo–So) — exakt gespiegelt aus calcWeekScore,
+// aber auf die Strang-Tasks statt den Globals. 'done'=+plus, 'missed'=-minus, 'reported'=0 (neutral).
+function mhStrandWeekScore(stasks, swd) {
+  if (!swd || !swd.days || !Array.isArray(stasks)) return { pos:0, neg:0, total:0 };
+  let pos = 0, neg = 0;
+  for (let di = 0; di < 7; di++) {
+    const de = swd.days[di] || swd.days[String(di)] || {};
+    for (const task of stasks) {
+      if (!mhTaskActiveOnDay(task, di)) continue;
+      const s = de[task.id] !== undefined ? de[task.id] : de[String(task.id)];
+      if (s === 'done') pos += (task.plus || 0);
+      else if (s === 'missed') neg += (task.minus || 0);
+    }
+  }
+  return { pos, neg, total: pos - neg };
+}
+
 // Abos an die aktuell AKTIVEN Stränge angleichen (an-/abmelden) — idempotent, beliebig oft aufrufbar.
 function syncStrandSubscriptions() {
   if (!db) return;
@@ -2272,6 +2291,30 @@ function renderSubHub() {
     const stasks = Array.isArray(data.tasks) ? data.tasks : (data.tasks ? Object.values(data.tasks) : []);
     if (!stasks.length) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">' + esc(t('mhHubWaiting')) + '</div>'; return; }
     const swd = (data.weekData && data.weekData[weekKey]) ? data.weekData[weekKey] : { days:{} };
+    // ── B5: Wochenbelohnungs-Balken pro Strang (read-only). Reset pro Kalenderwoche (folgt weekKey). ──
+    const gWeek = (data.goals && data.goals.week) || 0;
+    const rwName = (data.rewardNames && data.rewardNames.week) || '';
+    const sc = mhStrandWeekScore(stasks, swd);
+    const clamped = Math.max(0, sc.total);
+    if (gWeek > 0) {
+      const pct = Math.min(100, Math.round((clamped / gWeek) * 100));
+      const reached = clamped >= gWeek;
+      html += '<div style="margin:2px 0 11px 15px;">'
+        + '<div style="font-size:11px;color:var(--text2);margin-bottom:4px;display:flex;align-items:center;gap:5px;">'
+        + '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>'
+        + '<span>' + esc(rwName || t('weekReward')) + '</span>'
+        + (reached ? '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:2px;"><polyline points="20 6 9 17 4 12"/></svg>' : '')
+        + '</div>'
+        + '<div style="height:8px;border-radius:5px;background:rgba(255,255,255,0.08);overflow:hidden;"><div style="height:100%;border-radius:5px;background:linear-gradient(90deg,' + color + ',var(--yellow));width:' + pct + '%;transition:width .4s;"></div></div>'
+        + '<div style="font-size:10px;color:var(--text2);text-align:right;margin-top:3px;">' + clamped + ' / ' + gWeek + ' ' + esc(t('points')) + '</div>'
+        + '</div>';
+    } else {
+      // Kein Wochenziel gesetzt → ehrliche Zahl statt irreführendem Voll-Balken (vermeidet /0-Bug).
+      const col = sc.total > 0 ? 'var(--green)' : (sc.total < 0 ? 'var(--red)' : 'var(--text2)');
+      html += '<div style="margin:2px 0 11px 15px;font-size:11px;color:var(--text2);display:flex;align-items:baseline;gap:6px;">'
+        + '<span style="font-size:15px;font-weight:700;color:' + col + ';">' + (sc.total > 0 ? '+' : '') + sc.total + '</span>'
+        + '<span>' + esc(t('mhHubPointsWeek')) + '</span></div>';
+    }
     const dayEntries = (swd.days && (swd.days[selectedDay] || swd.days[String(selectedDay)])) || {};
     const dayTasks = stasks.filter(tk => mhTaskActiveOnDay(tk, selectedDay));
     if (!dayTasks.length) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">' + esc(t('mhHubNoTasksToday')) + '</div>'; return; }
