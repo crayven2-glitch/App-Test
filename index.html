@@ -2835,6 +2835,7 @@ function renderDomTabs() {
 function switchDomTab(code) {
   if (!code || code === syncCode) return;
   window._activeTab = code;
+  const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open'); // altes Gate sofort schließen
   if (code === window._domMainCode) initSync(code);      // zurück zur Hauptpaarung
   else initSync(code, { domTab: true });                 // Dom öffnet seinen eigenen Sub-Strang
 }
@@ -2853,10 +2854,12 @@ function domAddSubPrompt() {
 function domRemoveSub(subId) {
   const s = (window._domSubs || {})[subId];
   const name = (s && s.subName) || 'diese Sub';
-  if (!confirm('„' + name + '" wirklich entfernen? Aufgaben und Verlauf dieser Sub werden gelöscht.')) return;
-  try { if (db) db.ref('strands/' + subId).remove(); } catch(e){}
-  try { if (db && window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/subs/' + subId).remove(); } catch(e){}
-  if (window._activeTab === subId) switchDomTab(window._domMainCode); // offenen Tab schließen → Hauptsub
+  if (!confirm('„' + name + '" wirklich beenden? Die Sub wird benachrichtigt, der Tab verschwindet und der Code wird ungültig.')) return;
+  // Beenden statt hart löschen: Status 'ended' → die Sub sieht eine Meldung, der Code lässt keinen Beitritt mehr zu.
+  // Erst weg vom Tab (Strang-Listener abmelden), DANN Status setzen — sonst flackert das eigene Gate.
+  if (window._activeTab === subId || syncCode === subId) switchDomTab(window._domMainCode);
+  try { if (db) db.ref('strands/' + subId + '/status').set('ended'); } catch(e){}
+  try { if (db && window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/status').set('ended'); } catch(e){}
   if (typeof renderDomTabs === 'function') renderDomTabs();
 }
 
@@ -2865,10 +2868,20 @@ function domSubEnforceGate(status) {
   const ov = document.getElementById('domSubGate');
   if (!ov) return;
   const isDomT = window._isDomTab, isSubT = window._isSubStrand;
-  if ((!isDomT && !isSubT) || status === 'active') { ov.classList.remove('open'); return; }
+  if (!isDomT && !isSubT) { ov.classList.remove('open'); return; }
   const tEl = document.getElementById('domSubGateTitle');
   const bEl = document.getElementById('domSubGateBody');
   const btn = document.getElementById('domSubGateBtn');
+  if (status === 'ended') {
+    // Beziehung beendet → Meldung + „Zurück zum Start" (v.a. für die Sub).
+    if (tEl) tEl.textContent = 'Beziehung beendet';
+    if (bEl) bEl.textContent = isSubT ? 'Dein Dom hat diese Beziehung beendet. Du kannst die App schließen oder mit einem neuen Code von vorn beginnen.' : 'Diese Beziehung wurde beendet.';
+    if (btn) { btn.style.display = ''; btn.textContent = 'Zurück zum Start'; btn.onclick = domSubBackToStart; }
+    ov.classList.add('open');
+    return;
+  }
+  if (status === 'active') { if (btn) btn.onclick = domSubUnlock; ov.classList.remove('open'); return; }
+  if (btn) btn.onclick = domSubUnlock; // gesperrt → Standard-Aktion (Freischalten)
   if (isDomT) {
     if (tEl) tEl.textContent = 'Zusatz-Abo für diese Sub';
     if (bEl) bEl.textContent = 'Diese Sub ist noch nicht freigeschaltet. Im fertigen Stand schaltest du sie per Zusatz-Abo frei — zum Testen geht es direkt per Knopf.';
@@ -2879,6 +2892,16 @@ function domSubEnforceGate(status) {
     if (btn) btn.style.display = 'none';
   }
   ov.classList.add('open');
+}
+
+// Sub: „Zurück zum Start" nach beendeter Beziehung → zurück zum Setup (Code-Eingabe).
+function domSubBackToStart() {
+  const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
+  if (currentRef) { try { currentRef.off(); } catch(e){} }
+  syncCode = null; window._isSubStrand = false; window._isDomTab = false;
+  try { localStorage.removeItem('devotion_substrand_mode'); localStorage.removeItem('pflichten_sync_code_2'); } catch(e){}
+  const inp = document.getElementById('setupCodeInput'); if (inp) inp.value = '';
+  const ss = document.getElementById('setupScreen'); if (ss) ss.classList.remove('hidden');
 }
 
 // „Zum Testen freischalten" (Dom): Beziehung auf aktiv setzen (später durch den Add-on-Kauf ersetzt).
@@ -3148,6 +3171,8 @@ function initSync(code, opts) {
       localStorage.removeItem('pflichten_rewards');
       localStorage.removeItem('pflichten_tasks');
     } catch(e) {}
+    // Globale Wochendaten/Ziele sofort zurücksetzen → keine Punkte-/Ziel-Leaks beim Wechsel auf eine (leere) Beziehung
+    weekData = {}; goalWeek = 0; goalMonth2 = 0;
   }
   syncCode = code;
   saveCodeLocally(code);
@@ -3183,8 +3208,8 @@ function initSync(code, opts) {
       if (data && data.mainCode) window._strandMainCode = data.mainCode;   // B7: Ziel für den Premium-Mirror in die Registry
       mhEnforceStrandLock(data && data.status);
     }
-    // Dom-Mehr-Sub: Gate für gesperrte Sub-Tabs (Dom) bzw. Warten-Screen (Sub).
-    if (window._isDomTab || window._isSubStrand) { if (typeof domSubEnforceGate === 'function') domSubEnforceGate(data && data.status); }
+    // Dom-Mehr-Sub: Gate für gesperrte Sub-Tabs/Sub-Beziehung; in allen anderen Modi (Hauptsub etc.) schließt es das Overlay wieder.
+    if (typeof domSubEnforceGate === 'function') domSubEnforceGate(data && data.status);
     if (localWriting) return;
     window._rolesSince = (data && data.rolesSince) ? data.rolesSince : null;
     window._strandRegistry = (data && data.strandRegistry) ? data.strandRegistry : {}; // Mehr-Herren: Liste der Neben-Stränge
