@@ -1176,6 +1176,8 @@ const I18N = {
     roleTwoDom: 'Auch dein Partner ist Dom — es gibt keine Sub. Eines solltet ihr auf Sub stellen.',
     roleBecomeSub: 'Zur Sub-Rolle wechseln',
     roleSettingsLabelText: 'Rolle',
+    rolePremiumLocked: 'Premium-Feature',
+    roleChangePremium: 'In Premium',
     settingsTitleDom: 'Aufgaben verwalten',
     settingsSubDom: 'Hinzufügen, bearbeiten, löschen',
     settingsTitleSub: 'Einstellungen',
@@ -1453,6 +1455,8 @@ const I18N = {
     roleTwoDom: 'Your partner is also Dom — there is no Sub. One of you should switch to Sub.',
     roleBecomeSub: 'Switch to Sub role',
     roleSettingsLabelText: 'Role',
+    rolePremiumLocked: 'Premium feature',
+    roleChangePremium: 'Get Premium',
     settingsTitleDom: 'Manage tasks',
     settingsSubDom: 'Add, edit, delete',
     settingsTitleSub: 'Settings',
@@ -2190,13 +2194,15 @@ function roleSelectCancel() {
 
 // Setzt die rollenabhängige UI durch: body-Klasse (CSS-Sperren), Badge, Header-Edit.
 function applyRoleUI() {
+  // Rollen-Feature gesperrt (Rolle in Firebase vorhanden, aber Plan erlaubt sie nicht) → Premium-Hinweis
+  const rolesLocked = (currentRole === 'dom' || currentRole === 'sub') && !canUse('roles');
   document.body.classList.toggle('role-sub', isSub());
   document.body.classList.toggle('role-dom', isDom());
 
   // Rollen-Badge im Wochen-Header
   const badge = document.getElementById('roleBadge');
   if (badge) {
-    if (currentRole === 'dom' || currentRole === 'sub') {
+    if ((currentRole === 'dom' || currentRole === 'sub') && !rolesLocked) {
       badge.style.display = '';
       badge.textContent = isDom() ? 'D' : 'S';
       badge.title = (isDom() ? t('roleYouAreDom') : t('roleYouAreSub')) + ' — ' + t('roleChange');
@@ -2219,17 +2225,22 @@ function applyRoleUI() {
   if (sSub) sSub.textContent = isSub() ? t('roleSubLocked') : t('settingsSubDom');
   const rsv = document.getElementById('roleSettingsValue');
   if (rsv) {
-    rsv.textContent = (currentRole === 'dom' || currentRole === 'sub') ? (isDom() ? t('roleDomShort') : t('roleSubShort')) : (currentRole === 'none' ? t('roleNoneLabel') : '—');
-    rsv.className = 'role-pill ' + (isDom() ? 'role-pill-dom' : isSub() ? 'role-pill-sub' : 'role-pill-none');
+    if (rolesLocked) {
+      rsv.textContent = t('premiumOnly');
+      rsv.className = 'role-pill role-pill-none';
+    } else {
+      rsv.textContent = (currentRole === 'dom' || currentRole === 'sub') ? (isDom() ? t('roleDomShort') : t('roleSubShort')) : (currentRole === 'none' ? t('roleNoneLabel') : '—');
+      rsv.className = 'role-pill ' + (isDom() ? 'role-pill-dom' : isSub() ? 'role-pill-sub' : 'role-pill-none');
+    }
   }
-  const rcb = document.getElementById('roleChangeBtn'); if (rcb) rcb.textContent = currentRole === 'none' ? t('roleSetup') : t('roleChange');
+  const rcb = document.getElementById('roleChangeBtn'); if (rcb) rcb.textContent = rolesLocked ? t('roleChangePremium') : (currentRole === 'none' ? t('roleSetup') : t('roleChange'));
   const rsl = document.getElementById('roleSettingsLabel'); if (rsl) rsl.textContent = t('roleSettingsLabelText');
   const rss = document.getElementById('roleSettingsSub');
   if (rss) {
-    const rcol = isDom() ? '#ff6b7a' : isSub() ? '#6bb0ee' : 'var(--text2)';
-    const rini = isDom() ? 'D' : isSub() ? 'S' : '•';
-    const rbg  = isDom() ? '#e5384a' : isSub() ? '#2f86d6' : 'rgba(255,255,255,.15)';
-    const rlbl = isDom() ? t('roleYouAreDom') : isSub() ? t('roleYouAreSub') : t('roleYouAreNone');
+    const rcol = rolesLocked ? 'var(--text2)' : isDom() ? '#ff6b7a' : isSub() ? '#6bb0ee' : 'var(--text2)';
+    const rini = rolesLocked ? '★' : isDom() ? 'D' : isSub() ? 'S' : '•';
+    const rbg  = rolesLocked ? '#b8862b' : isDom() ? '#e5384a' : isSub() ? '#2f86d6' : 'rgba(255,255,255,.15)';
+    const rlbl = rolesLocked ? t('rolePremiumLocked') : isDom() ? t('roleYouAreDom') : isSub() ? t('roleYouAreSub') : t('roleYouAreNone');
     rss.style.color = rcol;
     rss.innerHTML = '<span style="display:inline-flex;width:20px;height:20px;border-radius:50%;flex-shrink:0;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;background:' + rbg + ';">' + rini + '</span><span>' + rlbl + '</span>';
   }
