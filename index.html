@@ -2143,6 +2143,23 @@ function connectWithCode() {
   const raw = document.getElementById('setupCodeInput').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if (raw.length < 4) { document.getElementById('setupError').textContent = t('setupMinChars'); return; }
   document.getElementById('setupError').textContent = '';
+  try { if (!firebase.apps.length) firebase.initializeApp(firebaseConfig); } catch(e){}
+  // Dom-Mehr-Sub: Ist der Code eine dom-verankerte Sub-Beziehung? Dann tritt die SUB bei (statt neue Paarung).
+  let decided = false;
+  const fallback = () => { if (!decided) { decided = true; connectAsPair(raw); } };
+  const timer = setTimeout(fallback, 2500);
+  try {
+    firebase.database().ref('strands/' + raw).once('value', s => {
+      if (decided) return; clearTimeout(timer);
+      const sv = s.val();
+      if (sv && sv.anchorRole === 'dom' && sv.status !== 'ended') { decided = true; joinAsDomSub(raw); }
+      else fallback();
+    }, () => fallback());
+  } catch(e) { fallback(); }
+}
+
+// Bestehende Paarungs-Logik (pflichten/{code}) — 1:1 ausgelagert aus connectWithCode.
+function connectAsPair(raw) {
   // Neue Paarungen brauchen mind. 6 Zeichen (Schutz vor rat-/kollisionsanfälligen Kurzcodes).
   // Bestehende Codes jeder Länge bleiben nutzbar; bei Netzproblemen nicht aussperren.
   if (raw.length < 6) {
@@ -2160,6 +2177,13 @@ function connectWithCode() {
     return;
   }
   initSync(raw);
+}
+
+// Dom-Mehr-Sub: die Sub tritt ihrer dom-verankerten Beziehung bei (Sub-Rolle, strands/{code}).
+function joinAsDomSub(raw) {
+  try { firebase.database().ref('strands/' + raw + '/subDeviceId').set(deviceId); } catch(e){}
+  try { localStorage.setItem('devotion_substrand_mode', raw); } catch(e){}
+  initSync(raw, { subStrand: true });
 }
 
 function logout() {
@@ -2827,6 +2851,7 @@ function setRole(role) {
 // und fragt sie ab, falls weder lokal noch remote gesetzt (= auch Bestands-Migration).
 function loadRole() {
   if (!currentRef) return;
+  if (window._isSubStrand) { currentRole = 'sub'; applyRoleUI(); return; } // Sub ihrer dom-verankerten Beziehung — feste Sub-Rolle
   if (window._isNebenherr || window._isDomTab) { currentRole = 'dom'; applyRoleUI(); return; } // Nebenherr/Dom-Tab = Dom seiner Beziehung — keine Rollen-Auswahl
   // Auf ALLE Rollen der Paarung lauschen (nicht nur die eigene), um Fehlzustände
   // (2× Dom / 2× Sub) zu erkennen und den Auswahl-Screen zu steuern.
@@ -3061,7 +3086,8 @@ function initSync(code, opts) {
   opts = opts || {};
   const isStrand = !!opts.strand; // Nebenherr-Modus: gegen strands/{code} statt pflichten/{code}
   const isDomTab = !!opts.domTab; // Dom-Mehr-Sub: Dom öffnet eigenen Sub-Strang (strands/-Pfad, aber KEIN Nebenherr)
-  const usesStrandPath = isStrand || isDomTab;
+  const isSubStrand = !!opts.subStrand; // Dom-Mehr-Sub: die SUB öffnet ihre dom-verankerte Beziehung (Sub-Rolle)
+  const usesStrandPath = isStrand || isDomTab || isSubStrand;
   // Reset localStorage when switching to a different code
   const previousCode = syncCode || ((() => { try { return localStorage.getItem('pflichten_sync_code_2'); } catch(e) { return null; } })());
   if (previousCode && previousCode !== code) {
@@ -3074,7 +3100,7 @@ function initSync(code, opts) {
   }
   syncCode = code;
   saveCodeLocally(code);
-  currentRole = (isStrand || isDomTab) ? 'dom' : loadLocalRole(code); // Nebenherr/Dom-Tab = Dom; sonst Paarungs-Rolle
+  currentRole = isSubStrand ? 'sub' : ((isStrand || isDomTab) ? 'dom' : loadLocalRole(code)); // Sub-Strang = Sub; Nebenherr/Dom-Tab = Dom; sonst Paarungs-Rolle
   document.getElementById('currentCodeDisplay').textContent = code;
 
   try {
@@ -3094,6 +3120,7 @@ function initSync(code, opts) {
   currentRef = db.ref((usesStrandPath ? 'strands/' : 'pflichten/') + code);
   window._isNebenherr = isStrand;      // Dom-Tab ist KEIN Nebenherr → Tab-Leiste + normale Dom-UI bleiben
   window._isDomTab = isDomTab;
+  window._isSubStrand = isSubStrand;
   trackEvent('login', { method: isStrand ? 'strand_code' : 'pair_code' });
 
   currentRef.on('value', (snapshot) => {
@@ -3139,7 +3166,7 @@ function initSync(code, opts) {
 
   document.getElementById('setupScreen').classList.add('hidden');
   // Save deviceId to pair code data (NICHT im Dom-Tab — dort ist code eine subId unter strands/)
-  if (db && !isDomTab) db.ref('pflichten/' + code + '/deviceId').set(deviceId);
+  if (db && !isDomTab && !isSubStrand) db.ref('pflichten/' + code + '/deviceId').set(deviceId);
   loadHeaderText(null);
   loadGoals(null);
   loadPin();
