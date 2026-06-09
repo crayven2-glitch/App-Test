@@ -1204,6 +1204,8 @@ const I18N = {
     mhHubActive: 'aktiv',
     mhHubNoTasksToday: 'Heute keine Aufgabe von diesem Herrn.',
     mhHubWaiting: 'Dieser Herr hat noch keine Aufgaben angelegt.',
+    mhHubTitleHaupt: 'Aufsicht: Aufgaben deiner Herren',
+    mhHubEnd: 'Beenden',
     rolePremiumLocked: 'Premium-Feature',
     roleChangePremium: 'In Premium',
     settingsTitleDom: 'Aufgaben verwalten',
@@ -1507,6 +1509,8 @@ const I18N = {
     mhHubActive: 'active',
     mhHubNoTasksToday: 'No task from this master today.',
     mhHubWaiting: 'This master has not created any tasks yet.',
+    mhHubTitleHaupt: 'Oversight: your masters’ tasks',
+    mhHubEnd: 'End',
     rolePremiumLocked: 'Premium feature',
     roleChangePremium: 'Get Premium',
     settingsTitleDom: 'Manage tasks',
@@ -2123,7 +2127,12 @@ function inviteHerr() {
   db.ref('strands/' + strandId).set({ mainCode: syncCode, herrName:'', status:'pending', createdAt:now }); // isolierter Strang-Knoten
   // _strandRegistry kommt per Sync-Listener zurück → updateMehrHerrenUI() rendert neu
 }
-function setStrandStatus(strandId, status) { if (mehrHerrenAvailable() && currentRef) currentRef.child('strandRegistry/' + strandId + '/status').set(status); }
+function setStrandStatus(strandId, status) {
+  if (mehrHerrenAvailable() && currentRef) {
+    currentRef.child('strandRegistry/' + strandId + '/status').set(status);
+    if (db) db.ref('strands/' + strandId + '/status').set(status); // Strang-Knoten spiegeln (Beitritts-Block + späterer Not-Aus, B6)
+  }
+}
 function freigebenStrand(id) { setStrandStatus(id, 'active'); }
 function pauseStrand(id) { setStrandStatus(id, 'blocked'); }
 function endStrand(id) { if (confirm(t('mhEndConfirm'))) setStrandStatus(id, 'ended'); }
@@ -2196,8 +2205,9 @@ window._strandData = window._strandData || {};          // strandId -> Strang-Sn
 window._strandListeners = window._strandListeners || {}; // strandId -> Firebase-Ref (für .off())
 const MH_HUB_COLORS = ['#e94560','#f0c040','#6c8cff','#4ecca3','#c879ff','#ff9f45'];
 
-// Nur die Sub der Hauptpaarung sieht den Hub (ein Nebenherr/Hauptherr nicht).
-function subHubEligible() { return isSub() && !window._isNebenherr; }
+// Den Hub sehen: die Sub der Hauptpaarung (read-only) UND der Hauptherr (Aufsicht: sehen + beenden, nicht bearbeiten).
+// Ein Nebenherr nie (Isolation — sieht nur seinen eigenen Strang).
+function subHubEligible() { return !window._isNebenherr && (isSub() || isMainHerr()); }
 
 // Tag-Filter gespiegelt aus isTaskActiveOnDay, aber auf Strang-Tasks statt den Globals.
 function mhTaskActiveOnDay(task, dayIndex) {
@@ -2244,9 +2254,10 @@ function renderSubHub() {
   if (!strands.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
   const weekKey = getWeekKey(currentWeekOffset);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const isHaupt = isMainHerr(); // Hauptherr = Aufsicht (Titel + Beenden-Knopf); Sub = read-only
   let html = '<div style="font-size:12px;color:var(--text2);margin:14px 2px 8px;display:flex;align-items:center;gap:6px;font-weight:600;">'
     + '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> '
-    + esc(t('mhHubTitle')) + '</div>';
+    + esc(isHaupt ? t('mhHubTitleHaupt') : t('mhHubTitle')) + '</div>';
   strands.forEach((s, idx) => {
     const data = window._strandData[s.strandId];
     const color = MH_HUB_COLORS[idx % MH_HUB_COLORS.length];
@@ -2254,7 +2265,9 @@ function renderSubHub() {
     html += '<div style="margin:0 0 5px;display:flex;align-items:center;gap:7px;">'
       + '<span style="width:8px;height:8px;border-radius:50%;background:' + color + ';flex-shrink:0;"></span>'
       + '<span style="font-size:13px;font-weight:600;">' + esc(name) + '</span>'
-      + '<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:rgba(78,204,163,.18);color:var(--green);">' + esc(t('mhHubActive')) + '</span></div>';
+      + '<span style="font-size:10px;padding:1px 7px;border-radius:20px;background:rgba(78,204,163,.18);color:var(--green);">' + esc(t('mhHubActive')) + '</span>'
+      + (isHaupt ? '<button onclick="endStrand(\'' + s.strandId + '\')" style="margin-left:auto;font-size:10.5px;padding:2px 9px;border-radius:7px;background:none;border:1px solid var(--red);color:var(--red);cursor:pointer;">' + esc(t('mhHubEnd')) + '</button>' : '')
+      + '</div>';
     if (!data) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">…</div>'; return; }
     const stasks = Array.isArray(data.tasks) ? data.tasks : (data.tasks ? Object.values(data.tasks) : []);
     if (!stasks.length) { html += '<div style="font-size:11.5px;color:var(--text2);margin:0 0 12px 15px;">' + esc(t('mhHubWaiting')) + '</div>'; return; }
