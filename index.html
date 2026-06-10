@@ -3016,7 +3016,10 @@ function subSafewordPause() {
     try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/status').set('paused'); } catch(e){}
     try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/safeword').set(sw); } catch(e){}
   }
-  // Das Pausiert-Gate erscheint automatisch über den Sync (status 'paused').
+  // Optimistisch sofort sperren — nicht auf den Firebase-Round-Trip warten (iOS-PWA-Listener feuert nicht immer prompt).
+  window._subStrandStatus = 'paused';
+  if (typeof updateSubSafewordBar === 'function') updateSubSafewordBar();
+  if (typeof domSubEnforceGate === 'function') domSubEnforceGate('paused');
 }
 
 // Sub beendet die Beziehung endgültig (eigener harter Ausstieg, wie das × beim Dom).
@@ -3033,7 +3036,11 @@ function subSafewordEnd() {
     try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/status').set('ended'); } catch(e){}
     try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/safeword').set(sw); } catch(e){}
   }
-  // Sub sieht das 'ended'-Gate (Zurück zum Start); beim Dom verschwindet der Tab (domSubList filtert 'ended').
+  // Optimistisch sofort die Beendet-Meldung zeigen.
+  window._subStrandStatus = 'ended';
+  if (typeof updateSubSafewordBar === 'function') updateSubSafewordBar();
+  if (typeof domSubEnforceGate === 'function') domSubEnforceGate('ended');
+  // Beim Dom verschwindet der Tab (domSubList filtert 'ended').
 }
 
 // Beziehung fortsetzen (von Sub ODER Dom): Strang wieder aktiv, Safewort löschen, Registry spiegeln.
@@ -3052,12 +3059,16 @@ function strandResume(strandId, mainCode) {
 function subResume() {
   if (!window._isSubStrand || !syncCode) return;
   strandResume(syncCode, window._subStrandMainCode);
+  // Optimistisch sofort entsperren (UI nicht vom Firebase-Round-Trip abhängig machen).
+  window._subStrandStatus = 'active';
+  const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
+  if (typeof updateSubSafewordBar === 'function') updateSubSafewordBar();
 }
 // Dom setzt eine pausierte Sub fort (aus dem Gate des offenen Tabs ODER aus dem Banner).
 function domSubResume(subId) {
   subId = subId || syncCode;
   strandResume(subId, window._domMainCode);
-  if (subId === syncCode) { const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open'); }
+  if (subId === syncCode) { window._subStrandStatus = 'active'; const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open'); }
   if (typeof renderDomSubSafewordBanner === 'function') renderDomSubSafewordBanner();
 }
 // Dom quittiert die Safewort-Meldung (Banner verschwindet; Pause/Ende bleibt bis zum Fortsetzen bestehen).
@@ -3373,7 +3384,7 @@ function initSync(code, opts) {
     if (typeof clearSecondaryViews === 'function') clearSecondaryViews();
   }
   syncCode = code;
-  saveCodeLocally(code);
+  if (!isDomTab) saveCodeLocally(code); // Im Dom-Tab NICHT den subId als Primärcode merken → Reboot landet wieder im Hub (Hauptpaarung)
   currentRole = isSubStrand ? 'sub' : ((isStrand || isDomTab) ? 'dom' : loadLocalRole(code)); // Sub-Strang = Sub; Nebenherr/Dom-Tab = Dom; sonst Paarungs-Rolle
   document.getElementById('currentCodeDisplay').textContent = code;
 
@@ -6156,7 +6167,12 @@ if (savedCode) {
   document.getElementById('ageCheckScreen').classList.add('hidden');
   document.getElementById('setupScreen').classList.add('hidden');
   const _strandMode = (function(){ try { return localStorage.getItem('devotion_strand_mode'); } catch(e){ return null; } })();
-  initSync(savedCode, { strand: _strandMode === savedCode }); // Nebenherr-Modus über App-Neustart hinweg
+  const _subStrandMode = (function(){ try { return localStorage.getItem('devotion_substrand_mode'); } catch(e){ return null; } })();
+  if (_subStrandMode === savedCode) {
+    initSync(savedCode, { subStrand: true });           // Dom-Mehr-Sub: Sub-Beziehung über App-Neustart wiederherstellen
+  } else {
+    initSync(savedCode, { strand: _strandMode === savedCode }); // Nebenherr-Modus über App-Neustart hinweg
+  }
 } else if (ageVerified) {
   document.getElementById('langSelectScreen').classList.add('hidden');
   document.getElementById('ageCheckScreen').classList.add('hidden');
