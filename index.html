@@ -305,7 +305,7 @@ input[type="number"] { -moz-appearance:textfield; }
 .month-history-bar-fill { height:100%; border-radius:3px; transition:width .5s; }
 .month-history-sub { display:flex; justify-content:space-between; font-size:11px; color:var(--text2); margin-top:6px; }
 
-.setup-lang-toggle { position:absolute; top:16px; right:16px; display:flex; background:var(--surface); border-radius:8px; overflow:hidden; }
+.setup-lang-toggle { position:absolute; top:calc(env(safe-area-inset-top, 0px) + 14px); right:16px; display:flex; background:var(--surface); border-radius:8px; overflow:hidden; z-index:5; }
 .setup-lang-toggle button { padding:6px 14px; border:none; font-size:13px; font-weight:600; cursor:pointer; background:none; color:var(--text2); transition:all .2s; }
 .setup-lang-toggle button.active { background:var(--accent); color:#fff; }
 .setup-app-title { font-size:28px; font-weight:800; letter-spacing:1px; margin-bottom:8px; }
@@ -973,6 +973,15 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   <div class="lang-card" id="mainSubNameCard" style="display:none;flex-direction:column;align-items:stretch;gap:8px;">
     <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span> <span>Name für Tab 1 (Hauptsub)</span></div>
     <input type="text" id="mainSubNameInput" maxlength="24" placeholder="Hauptsub" onchange="saveMainSubName()" style="background:var(--surface2);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;width:100%;box-sizing:border-box;">
+  </div>
+  <!-- DOM-MEHR-SUB: Beitritts-Code der aktuell geöffneten Sub (zum Wiederfinden/Teilen, falls die Sub neu einrichten muss) -->
+  <div class="lang-card" id="subJoinCodeCard" style="display:none;flex-direction:column;align-items:stretch;gap:8px;">
+    <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span> <span>Beitritts-Code dieser Sub</span></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <code id="subJoinCodeValue" style="flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;color:var(--text);font-size:15px;font-weight:600;letter-spacing:1px;text-align:center;">—</code>
+      <button id="subJoinCodeCopyBtn" class="notif-btn" style="white-space:nowrap;" onclick="copySubJoinCode()">Kopieren</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--text2);line-height:1.45;">Gib diesen Code der Sub, falls sie sich neu einrichten muss.</div>
   </div>
   <div class="lang-card dom-only" id="mainHerrCard" style="display:none;flex-direction:column;align-items:stretch;gap:10px;">
     <div class="lang-label" style="display:flex;align-items:center;gap:6px;"><span class="ico" style="color:var(--accent)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> <span id="mainHerrLabel">Herren verwalten</span></div>
@@ -2901,6 +2910,21 @@ function updateMainSubNameCard() {
   const msi = document.getElementById('mainSubNameInput');
   if (msi && !msi.matches(':focus')) msi.value = window._domMainSubName || '';
 }
+// Beitritts-Code der aktuell geöffneten Sub in den Einstellungen zeigen (nur im Dom-Tab).
+// syncCode ist im Dom-Tab die subId = der Code, den die Sub zum Einrichten eintippt.
+function updateSubJoinCodeCard() {
+  const card = document.getElementById('subJoinCodeCard'); if (!card) return;
+  const show = !!window._isDomTab && !!syncCode;
+  card.style.display = show ? 'flex' : 'none';
+  if (show) { const v = document.getElementById('subJoinCodeValue'); if (v) v.textContent = syncCode; }
+}
+function copySubJoinCode() {
+  const code = (typeof syncCode !== 'undefined' && syncCode) ? syncCode : '';
+  if (!code) return;
+  try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code); } catch(e){}
+  const b = document.getElementById('subJoinCodeCopyBtn');
+  if (b) { const o = b.textContent; b.textContent = 'Kopiert ✓'; setTimeout(() => { b.textContent = o; }, 1500); }
+}
 
 // Sub entfernen: Beziehung + Registry-Eintrag löschen, offenen Tab zum Hauptsub schließen.
 function domRemoveSub(subId) {
@@ -3336,6 +3360,7 @@ function applyRoleUI() {
   if (typeof syncStrandSubscriptions === 'function') syncStrandSubscriptions(); // B4: bei Rollenwechsel Hub-Abos angleichen
   if (typeof renderDomTabs === 'function') renderDomTabs(); // Dom-Mehr-Sub: Tab-Leiste nach Rollen-Update aktualisieren
   if (typeof updateMainSubNameCard === 'function') updateMainSubNameCard(); // Dom-Mehr-Sub: Hauptsub-Name-Karte in Einstellungen
+  if (typeof updateSubJoinCodeCard === 'function') updateSubJoinCodeCard();  // Dom-Mehr-Sub: Beitritts-Code der offenen Sub in Einstellungen
   if (typeof render === 'function' && document.getElementById('taskList')) render();
 }
 

@@ -1,0 +1,35 @@
+{
+  "name": "Devotion",
+  "short_name": "Devotion",
+  "id": "/deploy/",
+  "description": "Tasks, trust, devotion. The app for couples who live power dynamics with structure, clarity, and respect.",
+  "start_url": "/deploy/index.html",
+  "scope": "/deploy/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "dir": "ltr",
+  "lang": "de",
+  "categories": ["lifestyle"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
