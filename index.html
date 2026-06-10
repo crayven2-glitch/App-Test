@@ -690,6 +690,15 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
   <!-- DOM-MEHR-SUB: Tab-Leiste — der Dom schaltet zwischen seinen Subs um (Tab 1 = Hauptsub) -->
   <div id="domTabsBar" style="display:none;gap:7px;padding:8px 16px 2px;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
+  <!-- DOM-MEHR-SUB: Sub-Safewort — kleiner, immer erreichbarer Notbremse-Knopf (nur in der dom-verankerten Sub-Beziehung, wenn aktiv) -->
+  <div id="subSafewordBar" style="display:none;justify-content:flex-end;padding:6px 16px 0;">
+    <button onclick="openSubSafewordModal()" aria-label="Safewort" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 11px;border-radius:8px;border:1px solid var(--yellow);background:none;color:var(--yellow);cursor:pointer;">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      Safewort
+    </button>
+  </div>
+  <!-- DOM-MEHR-SUB: Banner beim Dom (Hub), wenn eine Sub per Safewort pausiert/beendet hat (unquittiert) -->
+  <div id="domSubSafewordBanner" style="display:none;padding:0 16px;"></div>
   <!-- Trial Banner -->
   <div class="upgrade-banner" id="trialBanner" style="display:none;" onclick="showPricing()">
     <div>
@@ -1076,6 +1085,18 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     <h3 id="domSubGateTitle" style="margin:0 0 8px;">Zusatz-Abo nötig</h3>
     <p id="domSubGateBody" style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0 0 18px;"></p>
     <button id="domSubGateBtn" onclick="domSubUnlock()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Zum Testen freischalten</button>
+  </div>
+</div>
+
+<!-- DOM-MEHR-SUB: Sub-Safewort-Auswahl (Pausieren = Notbremse / Beziehung beenden) -->
+<div class="modal-overlay" id="subSafewordModal" style="z-index:9998;">
+  <div class="modal" style="text-align:center;padding-top:28px;">
+    <div style="color:var(--yellow);display:flex;justify-content:center;margin-bottom:10px;"><svg viewBox="0 0 24 24" style="width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></div>
+    <h3 style="margin:0 0 8px;">Safewort</h3>
+    <p style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0 0 18px;">„Pausieren" ist die Notbremse — die Beziehung ruht und du (oder dein Dom) könnt sie jederzeit fortsetzen. „Beziehung beenden" beendet sie endgültig für beide Seiten.</p>
+    <button onclick="subSafewordPause()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--yellow);color:#1a1a1a;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:9px;">Pausieren</button>
+    <button onclick="subSafewordEnd()" style="width:100%;padding:12px;border:1px solid var(--red);border-radius:10px;background:none;color:var(--red);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:9px;">Beziehung beenden</button>
+    <button onclick="closeSubSafewordModal()" style="width:100%;padding:10px;border:none;border-radius:10px;background:none;color:var(--text2);font-size:13px;cursor:pointer;">Abbrechen</button>
   </div>
 </div>
 
@@ -2789,6 +2810,7 @@ function watchDomSubs() {
   window._domSubsRef.on('value', snap => {
     window._domSubs = snap.val() || {};
     if (typeof renderDomTabs === 'function') renderDomTabs();
+    if (typeof renderDomSubSafewordBanner === 'function') renderDomSubSafewordBanner();
   }, () => {});
   // Hauptsub-Tab-Name live spiegeln (dom-seitige Beschriftung von Tab 1).
   if (window._domMainNameRef) { try { window._domMainNameRef.off(); } catch(e){} }
@@ -2831,18 +2853,19 @@ function renderDomTabs() {
     const on = active === id;
     const bg = on ? 'var(--accent)' : 'var(--surface2)';
     const col = on ? '#fff' : 'var(--text)';
-    const ico = opt.lock ? '🔒 ' : '';
+    const ico = opt.paused ? '⏸ ' : (opt.lock ? '🔒 ' : '');
     const x = (opt.removable && on) ? '<span onclick="event.stopPropagation();domRemoveSub(\'' + id + '\')" style="margin-left:9px;font-weight:700;opacity:.85;" title="Sub entfernen">×</span>' : '';
     return '<button onclick="switchDomTab(\'' + id + '\')" style="flex:0 0 auto;border:none;border-radius:9px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:' + bg + ';color:' + col + ';opacity:' + (opt.lock && !on ? '.6' : '1') + ';">' + ico + esc(label) + x + '</button>';
   };
   let html = tab(window._domMainCode, window._domMainSubName || 'Hauptsub');
-  subs.forEach(s => { html += tab(s.subId, s.subName || 'Sub', { lock: (s.status === 'pending' || s.status === 'blocked'), removable: true }); });
+  subs.forEach(s => { html += tab(s.subId, s.subName || 'Sub', { lock: (s.status === 'pending' || s.status === 'blocked'), paused: (s.status === 'paused'), removable: true }); });
   if (subs.length < MAX_DOM_SUBS - 1) {
     const addLabel = subs.length === 0 ? '+ Sub hinzufügen' : '+';
     html += '<button onclick="domAddSubPrompt()" aria-label="Sub hinzufügen" style="flex:0 0 auto;border:1px dashed var(--text2);border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer;background:none;color:var(--text2);">' + addLabel + '</button>';
   }
   el.innerHTML = html;
   el.style.display = 'flex';
+  if (typeof renderDomSubSafewordBanner === 'function') renderDomSubSafewordBanner();
 }
 
 // Tab wechseln: lädt die Beziehung dieses Tabs (Hauptpaarung oder dom-verankerter Sub-Strang).
@@ -2897,6 +2920,7 @@ function domSubEnforceGate(status) {
   const ov = document.getElementById('domSubGate');
   if (!ov) return;
   const isDomT = window._isDomTab, isSubT = window._isSubStrand;
+  if (typeof updateSubSafewordBar === 'function') updateSubSafewordBar(); // Safewort-Knopf der Sub mitführen
   if (!isDomT && !isSubT) { ov.classList.remove('open'); return; }
   const tEl = document.getElementById('domSubGateTitle');
   const bEl = document.getElementById('domSubGateBody');
@@ -2909,8 +2933,22 @@ function domSubEnforceGate(status) {
     ov.classList.add('open');
     return;
   }
+  if (status === 'paused') {
+    // Safewort-Pause: Sub sieht „Pausiert“ + Fortsetzen; Dom sieht „… hat pausiert“ + Fortsetzen.
+    if (isSubT) {
+      if (tEl) tEl.textContent = 'Pausiert';
+      if (bEl) bEl.textContent = 'Du hast das Safewort genutzt. Dein Dom wurde informiert. Wenn du bereit bist, kannst du fortsetzen.';
+      if (btn) { btn.style.display = ''; btn.textContent = 'Fortsetzen'; btn.onclick = subResume; }
+    } else {
+      if (tEl) tEl.textContent = domSubName(syncCode) + ' hat pausiert';
+      if (bEl) bEl.textContent = 'Diese Sub hat per Safewort pausiert. Frag bitte nach, was los ist — oder setze die Beziehung fort.';
+      if (btn) { btn.style.display = ''; btn.textContent = 'Fortsetzen'; btn.onclick = function() { domSubResume(syncCode); }; }
+    }
+    ov.classList.add('open');
+    return;
+  }
   if (status === 'active') { if (btn) btn.onclick = domSubUnlock; ov.classList.remove('open'); return; }
-  if (btn) btn.onclick = domSubUnlock; // gesperrt → Standard-Aktion (Freischalten)
+  if (btn) { btn.style.display = ''; btn.onclick = domSubUnlock; } // gesperrt → Standard-Aktion (Freischalten)
   if (isDomT) {
     if (tEl) tEl.textContent = 'Zusatz-Abo für diese Sub';
     if (bEl) bEl.textContent = 'Diese Sub ist noch nicht freigeschaltet. Im fertigen Stand schaltest du sie per Zusatz-Abo frei — zum Testen geht es direkt per Knopf.';
@@ -2944,6 +2982,122 @@ function domSubUnlock() {
     db.ref('pflichten/' + window._domMainCode + '/subs/' + syncCode + '/premium').set(true);
   } } catch(e){}
   const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
+}
+
+// ── DOM-MEHR-SUB: Sub-Safewort (Pausieren/Beenden) + Fortsetzen (beide Seiten) + Dom-Banner ──
+function openSubSafewordModal() { const m = document.getElementById('subSafewordModal'); if (m) m.classList.add('open'); }
+function closeSubSafewordModal() { const m = document.getElementById('subSafewordModal'); if (m) m.classList.remove('open'); }
+
+// Kleinen Safewort-Knopf nur in einer aktiven, dom-verankerten Sub-Beziehung zeigen.
+function updateSubSafewordBar() {
+  const bar = document.getElementById('subSafewordBar');
+  if (!bar) return;
+  bar.style.display = (window._isSubStrand && window._subStrandStatus === 'active') ? 'flex' : 'none';
+}
+
+// Name einer Sub (für Banner/Gate-Texte) aus Registry bzw. Tab-1-Name.
+function domSubName(strandId) {
+  if (strandId && strandId === window._domMainCode) return window._domMainSubName || 'Hauptsub';
+  const reg = (window._domSubs || {})[strandId];
+  return (reg && reg.subName) || 'Sub';
+}
+
+// Sub zieht das Safewort → pausieren: Strang sperren, Safewort markieren, Dom informieren (Push + Registry-Spiegel).
+function subSafewordPause() {
+  closeSubSafewordModal();
+  if (!db || !syncCode || !window._isSubStrand) return;
+  if (!confirm('Safewort: Beziehung jetzt pausieren? Dein Dom wird sofort informiert. Du kannst später wieder fortsetzen.')) return;
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  const sw = { by: 'sub', at: now, ack: false };
+  try { db.ref('strands/' + syncCode + '/status').set('paused'); } catch(e){}
+  try { db.ref('strands/' + syncCode + '/safeword').set(sw); } catch(e){}
+  try { db.ref('strands/' + syncCode + '/lastActivity').set({ timestamp: now, device: deviceId, type: 'safeword', taskStatus: 'safeword', status: 'paused' }); } catch(e){}
+  if (window._subStrandMainCode) {
+    try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/status').set('paused'); } catch(e){}
+    try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/safeword').set(sw); } catch(e){}
+  }
+  // Das Pausiert-Gate erscheint automatisch über den Sync (status 'paused').
+}
+
+// Sub beendet die Beziehung endgültig (eigener harter Ausstieg, wie das × beim Dom).
+function subSafewordEnd() {
+  closeSubSafewordModal();
+  if (!db || !syncCode || !window._isSubStrand) return;
+  if (!confirm('Beziehung wirklich beenden? Das beendet sie endgültig für beide Seiten und der Code wird ungültig.')) return;
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  const sw = { by: 'sub', at: now, ack: false, ended: true };
+  try { db.ref('strands/' + syncCode + '/status').set('ended'); } catch(e){}
+  try { db.ref('strands/' + syncCode + '/safeword').set(sw); } catch(e){}
+  try { db.ref('strands/' + syncCode + '/lastActivity').set({ timestamp: now, device: deviceId, type: 'safeword', taskStatus: 'ended', status: 'ended' }); } catch(e){}
+  if (window._subStrandMainCode) {
+    try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/status').set('ended'); } catch(e){}
+    try { db.ref('pflichten/' + window._subStrandMainCode + '/subs/' + syncCode + '/safeword').set(sw); } catch(e){}
+  }
+  // Sub sieht das 'ended'-Gate (Zurück zum Start); beim Dom verschwindet der Tab (domSubList filtert 'ended').
+}
+
+// Beziehung fortsetzen (von Sub ODER Dom): Strang wieder aktiv, Safewort löschen, Registry spiegeln.
+function strandResume(strandId, mainCode) {
+  if (!db || !strandId) return;
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  try { db.ref('strands/' + strandId + '/status').set('active'); } catch(e){}
+  try { db.ref('strands/' + strandId + '/safeword').remove(); } catch(e){}
+  try { db.ref('strands/' + strandId + '/lastActivity').set({ timestamp: now, device: deviceId, type: 'strandStatus', status: 'active' }); } catch(e){}
+  if (mainCode) {
+    try { db.ref('pflichten/' + mainCode + '/subs/' + strandId + '/status').set('active'); } catch(e){}
+    try { db.ref('pflichten/' + mainCode + '/subs/' + strandId + '/safeword').remove(); } catch(e){}
+  }
+}
+// Sub setzt ihre eigene Beziehung fort.
+function subResume() {
+  if (!window._isSubStrand || !syncCode) return;
+  strandResume(syncCode, window._subStrandMainCode);
+}
+// Dom setzt eine pausierte Sub fort (aus dem Gate des offenen Tabs ODER aus dem Banner).
+function domSubResume(subId) {
+  subId = subId || syncCode;
+  strandResume(subId, window._domMainCode);
+  if (subId === syncCode) { const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open'); }
+  if (typeof renderDomSubSafewordBanner === 'function') renderDomSubSafewordBanner();
+}
+// Dom quittiert die Safewort-Meldung (Banner verschwindet; Pause/Ende bleibt bis zum Fortsetzen bestehen).
+function domSubAckSafeword(subId) {
+  if (!db || !subId) return;
+  try { db.ref('strands/' + subId + '/safeword/ack').set(true); } catch(e){}
+  if (window._domMainCode) { try { db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/safeword/ack').set(true); } catch(e){} }
+  if (typeof renderDomSubSafewordBanner === 'function') renderDomSubSafewordBanner();
+}
+
+// Banner beim Dom (nur im Hub = Hauptpaarung), wenn eine Sub per Safewort pausiert/beendet hat (unquittiert).
+function renderDomSubSafewordBanner() {
+  const el = document.getElementById('domSubSafewordBanner');
+  if (!el) return;
+  const isHub = isDom() && !window._isDomTab && !window._isSubStrand && !!window._domMainCode && syncCode === window._domMainCode;
+  if (!isHub) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const reg = window._domSubs || {};
+  const flagged = Object.keys(reg).map(id => Object.assign({ subId: id }, reg[id]))
+    .filter(s => s && s.safeword && s.safeword.by === 'sub' && !s.safeword.ack && (s.status === 'paused' || s.status === 'ended'));
+  if (!flagged.length) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  el.innerHTML = flagged.map(s => {
+    const name = esc(s.subName || 'Deine Sub');
+    const ended = s.status === 'ended';
+    const title = ended ? (name + ' hat die Beziehung beendet') : (name + ' hat pausiert');
+    const body = ended ? 'Per Safewort beendet — der Tab ist entfernt.' : 'Per Safewort pausiert. Bitte nachfragen, was los ist.';
+    let btns = '';
+    if (!ended) {
+      btns += '<button onclick="switchDomTab(\'' + s.subId + '\')" style="font-size:11.5px;padding:5px 12px;border-radius:8px;background:none;border:1px solid var(--text2);color:var(--text2);cursor:pointer;">Ansehen</button>';
+      btns += '<button onclick="domSubResume(\'' + s.subId + '\')" style="font-size:11.5px;padding:5px 12px;border-radius:8px;background:none;border:1px solid var(--green);color:var(--green);cursor:pointer;">Fortsetzen</button>';
+    }
+    btns += '<button onclick="domSubAckSafeword(\'' + s.subId + '\')" style="font-size:11.5px;padding:5px 12px;border-radius:8px;background:none;border:1px solid var(--text2);color:var(--text2);cursor:pointer;">Quittieren</button>';
+    return '<div style="background:rgba(245,197,24,0.14);border:1px solid var(--yellow);border-radius:12px;padding:11px 13px;margin:10px 0;">'
+      + '<div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--yellow);">'
+      + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+      + esc(title) + '</div>'
+      + '<div style="font-size:12.5px;color:var(--text);margin:5px 0 9px;">' + esc(body) + '</div>'
+      + '<div style="display:flex;gap:7px;flex-wrap:wrap;">' + btns + '</div></div>';
+  }).join('');
+  el.style.display = '';
 }
 
 function setRole(role) {
@@ -3252,6 +3406,12 @@ function initSync(code, opts) {
       if (data && data.mainCode) window._strandMainCode = data.mainCode;   // B7: Ziel für den Premium-Mirror in die Registry
       mhEnforceStrandLock(data && data.status);
     }
+    // Dom-Mehr-Sub: Status (+ mainCode für die Sub) des aktuellen Sub-Strangs/Tabs erfassen — für das
+    // Safewort (Pause/Beenden/Fortsetzen) und die Registry-Spiegelung. In normalen Modi neutralisieren.
+    if (window._isSubStrand || window._isDomTab) {
+      window._subStrandStatus = data && data.status;
+      if (window._isSubStrand && data && data.mainCode) window._subStrandMainCode = data.mainCode;
+    } else { window._subStrandStatus = null; }
     // Dom-Mehr-Sub: Gate für gesperrte Sub-Tabs/Sub-Beziehung; in allen anderen Modi (Hauptsub etc.) schließt es das Overlay wieder.
     if (typeof domSubEnforceGate === 'function') domSubEnforceGate(data && data.status);
     if (localWriting) return;
