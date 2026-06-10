@@ -1094,6 +1094,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     <h3 id="domSubGateTitle" style="margin:0 0 8px;">Zusatz-Abo nötig</h3>
     <p id="domSubGateBody" style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0 0 18px;"></p>
     <button id="domSubGateBtn" onclick="domSubUnlock()" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Zum Testen freischalten</button>
+    <button id="domSubGateBtn2" onclick="switchDomTab(window._domMainCode)" style="display:none;width:100%;margin-top:9px;padding:11px;border:none;border-radius:10px;background:none;color:var(--text2);font-size:13.5px;cursor:pointer;">Zurück zum Hauptsub</button>
   </div>
 </div>
 
@@ -3001,6 +3002,8 @@ function domSubEnforceGate(status) {
   const tEl = document.getElementById('domSubGateTitle');
   const bEl = document.getElementById('domSubGateBody');
   const btn = document.getElementById('domSubGateBtn');
+  const btn2 = document.getElementById('domSubGateBtn2');
+  if (btn2) btn2.style.display = 'none'; // „Zurück zum Hauptsub" nur für den Dom in gesperrten/pausierten Zuständen
   const icoEl = document.getElementById('domSubGateIcon');
   // Standard-Icon = Schloss (accent); im Pausiert-Zustand unten → Pause-Symbol (gelb).
   if (icoEl) { icoEl.style.color = 'var(--accent)'; icoEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'; }
@@ -3029,6 +3032,7 @@ function domSubEnforceGate(status) {
       if (tEl) tEl.textContent = domSubName(syncCode) + ' hat pausiert';
       if (bEl) bEl.textContent = 'Diese Sub hat per Safewort pausiert. Frag bitte nach, was los ist — oder setze die Beziehung fort.';
       if (btn) { btn.style.display = ''; btn.textContent = 'Fortsetzen'; btn.onclick = function() { domSubResume(syncCode); }; }
+      if (btn2) { btn2.style.display = ''; btn2.onclick = function(){ switchDomTab(window._domMainCode); }; } // raus ohne fortzusetzen
     }
     ov.classList.add('open');
     return;
@@ -3036,6 +3040,7 @@ function domSubEnforceGate(status) {
   if (status === 'active') { if (btn) btn.onclick = domSubUnlock; ov.classList.remove('open'); return; }
   // gesperrt (pending / noch nicht per Zusatz-Abo freigeschaltet)
   if (isDomT) {
+    if (btn2) { btn2.style.display = ''; btn2.onclick = function(){ switchDomTab(window._domMainCode); }; } // raus ohne zu kaufen
     const dev = (location.search.indexOf('dev=1') !== -1);
     if (dev) {
       if (tEl) tEl.textContent = 'Zusatz-Sub (Test)';
