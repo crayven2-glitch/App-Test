@@ -2935,6 +2935,8 @@ function domRemoveSub(subId) {
   // Erst weg vom Tab (Strang-Listener abmelden), DANN Status setzen — sonst flackert das eigene Gate.
   if (window._activeTab === subId || syncCode === subId) switchDomTab(window._domMainCode);
   try { if (db) db.ref('strands/' + subId + '/status').set('ended'); } catch(e){}
+  // B7-Push: die Sub übers Beenden informieren — auch bei geschlossener App (Server pusht das andere Strang-Gerät).
+  try { if (db) db.ref('strands/' + subId + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'strandStatus', status: 'ended' }); } catch(e){}
   try { if (db && window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/status').set('ended'); } catch(e){}
   if (typeof renderDomTabs === 'function') renderDomTabs();
 }
@@ -3003,6 +3005,8 @@ function domSubBackToStart() {
 function domSubUnlock() {
   if (!db || !syncCode || !window._isDomTab) return;
   try { db.ref('strands/' + syncCode + '/status').set('active'); } catch(e){}
+  // B7-Push: die wartende Sub übers Freischalten informieren — auch bei geschlossener App.
+  try { db.ref('strands/' + syncCode + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'strandStatus', status: 'active' }); } catch(e){}
   // Test-Freischaltung → Premium für diese Beziehung (manuell; später durch den echten Add-on-Kauf ersetzt).
   try { db.ref('strands/' + syncCode + '/subscription').set({ manual: true, plan: 'premium', status: 'active' }); } catch(e){}
   try { if (window._domMainCode) {
