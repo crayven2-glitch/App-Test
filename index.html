@@ -5607,11 +5607,11 @@ const ALL_PRICE_IDS = {
   premium_eur_year:  'price_1TdBAXBsKqUFNQCkvLsLHld6',
   premium_chf_month: 'price_1TdBAZBsKqUFNQCkoIZpGlsG',
   premium_chf_year:  'price_1TdBAZBsKqUFNQCk0ZFpa2xn',
-  // Dom-Mehr-Sub Zusatz-Sub — PLATZHALTER: in Stripe anlegen, echte Price-IDs hier UND in api/.env (PRICE_ADDON_*) eintragen.
-  addon_eur_month:  'price_ADDON_EUR_MONTH_TODO',
-  addon_eur_year:   'price_ADDON_EUR_YEAR_TODO',
-  addon_chf_month:  'price_ADDON_CHF_MONTH_TODO',
-  addon_chf_year:   'price_ADDON_CHF_YEAR_TODO',
+  // Dom-Mehr-Sub Zusatz-Sub (Stripe-Produkt „Devotion – Zusatz ADD-ON", angelegt 10.6.26). Dieselben IDs in api/.env (PRICE_ADDON_*).
+  addon_eur_month:  'price_1Tgi4lBsKqUFNQCkkMQTO4U3',
+  addon_eur_year:   'price_1Tgi5IBsKqUFNQCkAlNOtlzK',
+  addon_chf_month:  'price_1Tgi3yBsKqUFNQCkWZcErbfI',
+  addon_chf_year:   'price_1Tgi50BsKqUFNQCk1LQ358kh',
 };
 function getPriceId(plan, period) {
   return ALL_PRICE_IDS[plan + '_' + REGION + '_' + period];
