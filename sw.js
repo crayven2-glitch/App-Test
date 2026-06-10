@@ -36,7 +36,7 @@ self.addEventListener('notificationclick', e => {
 });
 
 // ── Cache (PWA offline) ──
-const CACHE_NAME = 'devotion-app-v24';
+const CACHE_NAME = 'devotion-app-v26';
 const ASSETS = ['./', './index.html'];
 
 self.addEventListener('install', e => {

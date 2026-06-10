@@ -1109,6 +1109,18 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   </div>
 </div>
 
+<!-- DOM-MEHR-SUB: „×" am Sub-Tab → Pause (Abo + Daten bleiben) vs. Beenden (Abo kündigen + Daten weg) -->
+<div class="modal-overlay" id="domEndChoiceModal" style="z-index:9998;">
+  <div class="modal" style="text-align:center;padding-top:28px;">
+    <div style="color:var(--red);display:flex;justify-content:center;margin-bottom:10px;"><svg viewBox="0 0 24 24" style="width:38px;height:38px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+    <h3 style="margin:0 0 8px;">„<span id="domEndChoiceName">Sub</span>" beenden?</h3>
+    <p style="font-size:13.5px;color:var(--text2);line-height:1.5;margin:0 0 18px;">Beenden <strong>kündigt das Zusatz-Abo</strong> zum Ende der bezahlten Laufzeit und <strong>löscht alle Daten</strong> dieser Sub (Aufgaben, Punkte, Verlauf) — nicht umkehrbar. Wenn ihr nur eine Pause braucht, bleiben Abo und Daten erhalten.</p>
+    <button onclick="domPauseSub(window._domEndSubId)" style="width:100%;padding:12px;border:none;border-radius:10px;background:var(--yellow);color:#1a1a1a;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:9px;">Pausieren (Daten behalten)</button>
+    <button onclick="domEndSub(window._domEndSubId)" style="width:100%;padding:12px;border:1px solid var(--red);border-radius:10px;background:none;color:var(--red);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:9px;">Beenden &amp; Abo kündigen</button>
+    <button onclick="closeDomEndChoiceModal()" style="width:100%;padding:10px;border:none;border-radius:10px;background:none;color:var(--text2);font-size:13px;cursor:pointer;">Abbrechen</button>
+  </div>
+</div>
+
 <!-- PIN MODAL -->
 <div class="modal-overlay" id="pinModal">
   <div class="modal" style="text-align:center; padding-top:28px;">
@@ -2789,7 +2801,7 @@ function mhStrandUpsell() { showPricing(); }
 // pflichten/{hauptCode}/subs/{subId}. Die Beziehungs-Engine (Aufgaben/Punkte/
 // Nachweise/Gate) kommt vom bestehenden Strang-System; nur die Rollen sind
 // gespiegelt — hier tritt die SUB bei (subDeviceId), nicht der Herr.
-const MAX_DOM_SUBS = 5; // inkl. Hauptsub (Tab 1) → bis zu 4 weitere
+const MAX_DOM_SUBS = 50; // kein echtes Limit beim Add-on-Modell (pro Sub bezahlt) — hoher Sicherheits-Deckel gegen UI-/Abuse-Ausreißer
 window._domMainCode = window._domMainCode || null; // Code der Hauptpaarung (Tab 1)
 window._domSubs = window._domSubs || {};           // subId -> Registry-Eintrag (lokaler Spiegel)
 
@@ -2927,17 +2939,55 @@ function copySubJoinCode() {
 }
 
 // Sub entfernen: Beziehung + Registry-Eintrag löschen, offenen Tab zum Hauptsub schließen.
+// „×" am Sub-Tab: erst die Wahl Pause vs. Beenden zeigen (Beenden kündigt Abo + löscht Daten).
 function domRemoveSub(subId) {
+  window._domEndSubId = subId;
   const s = (window._domSubs || {})[subId];
   const name = (s && s.subName) || 'diese Sub';
-  if (!confirm('„' + name + '" wirklich beenden? Die Sub wird benachrichtigt, der Tab verschwindet und der Code wird ungültig.')) return;
-  // Beenden statt hart löschen: Status 'ended' → die Sub sieht eine Meldung, der Code lässt keinen Beitritt mehr zu.
-  // Erst weg vom Tab (Strang-Listener abmelden), DANN Status setzen — sonst flackert das eigene Gate.
-  if (window._activeTab === subId || syncCode === subId) switchDomTab(window._domMainCode);
-  try { if (db) db.ref('strands/' + subId + '/status').set('ended'); } catch(e){}
-  // B7-Push: die Sub übers Beenden informieren — auch bei geschlossener App (Server pusht das andere Strang-Gerät).
-  try { if (db) db.ref('strands/' + subId + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'strandStatus', status: 'ended' }); } catch(e){}
-  try { if (db && window._domMainCode) db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/status').set('ended'); } catch(e){}
+  const nm = document.getElementById('domEndChoiceName'); if (nm) nm.textContent = name;
+  const m = document.getElementById('domEndChoiceModal'); if (m) m.classList.add('open');
+}
+function closeDomEndChoiceModal() { const m = document.getElementById('domEndChoiceModal'); if (m) m.classList.remove('open'); }
+
+// Pause durch den Dom: Abo + Daten bleiben, Beziehung ruht. Sub sieht „pausiert"; nur der Dom setzt fort.
+function domPauseSub(subId) {
+  closeDomEndChoiceModal();
+  if (!db || !subId) return;
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  const sw = { by: 'dom', at: now, ack: true };
+  try { db.ref('strands/' + subId + '/status').set('paused'); } catch(e){}
+  try { db.ref('strands/' + subId + '/safeword').set(sw); } catch(e){}
+  try { db.ref('strands/' + subId + '/lastActivity').set({ timestamp: now, device: deviceId, type: 'strandStatus', status: 'paused' }); } catch(e){}
+  if (window._domMainCode) {
+    try { db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/status').set('paused'); } catch(e){}
+    try { db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/safeword').set(sw); } catch(e){}
+  }
+  if (typeof renderDomTabs === 'function') renderDomTabs();
+}
+
+// Beenden durch den Dom: Zusatz-Abo zum Laufzeitende kündigen + Daten löschen + Status 'ended'.
+async function domEndSub(subId) {
+  closeDomEndChoiceModal();
+  if (!db || !subId) return;
+  const mc = window._domMainCode;
+  if (window._activeTab === subId || syncCode === subId) switchDomTab(mc); // erst weg vom Tab
+  // 1) Abo zum Laufzeitende kündigen — VOR dem Löschen (der Endpoint liest die stripeSubscriptionId).
+  try {
+    await fetch(API_BASE + 'cancel-subscription.php', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targetType: 'strand', targetId: subId })
+    });
+  } catch(e) { console.error('Add-on kündigen fehlgeschlagen:', e); }
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  // 2) Sub informieren (Push + Beendet-Gate). fcmTokens bleiben erhalten → Push vor dem Löschen.
+  try { db.ref('strands/' + subId + '/status').set('ended'); } catch(e){}
+  try { db.ref('strands/' + subId + '/lastActivity').set({ timestamp: now, device: deviceId, type: 'strandStatus', status: 'ended' }); } catch(e){}
+  // 3) Daten löschen (Aufgaben/Punkte/Verlauf/Nachweise). Minimaler 'ended'-Marker bleibt → Sub sieht die Meldung.
+  try { db.ref('strands/' + subId + '/weekData').remove(); } catch(e){}
+  try { db.ref('strands/' + subId + '/tasks').remove(); } catch(e){}
+  try { db.ref('strands/' + subId + '/categories').remove(); } catch(e){}
+  try { db.ref('strands/' + subId + '/endedAt').set(now); } catch(e){}
+  if (mc) { try { db.ref('pflichten/' + mc + '/subs/' + subId + '/status').set('ended'); } catch(e){} }
   if (typeof renderDomTabs === 'function') renderDomTabs();
 }
 
@@ -2967,8 +3017,14 @@ function domSubEnforceGate(status) {
     if (icoEl) { icoEl.style.color = 'var(--yellow)'; icoEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:40px;height:40px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'; }
     if (isSubT) {
       if (tEl) tEl.textContent = 'Pausiert';
-      if (bEl) bEl.textContent = 'Du hast das Safewort genutzt. Dein Dom wurde informiert. Wenn du bereit bist, kannst du fortsetzen.';
-      if (btn) { btn.style.display = ''; btn.textContent = 'Fortsetzen'; btn.onclick = subResume; }
+      if (window._subStrandPausedBy === 'dom') {
+        // Vom Dom pausiert → nur der Dom setzt fort (kein Fortsetzen-Knopf für die Sub).
+        if (bEl) bEl.textContent = 'Dein Dom hat die Beziehung pausiert. Sobald er fortsetzt, geht es hier weiter.';
+        if (btn) btn.style.display = 'none';
+      } else {
+        if (bEl) bEl.textContent = 'Du hast das Safewort genutzt. Dein Dom wurde informiert. Wenn du bereit bist, kannst du fortsetzen.';
+        if (btn) { btn.style.display = ''; btn.textContent = 'Fortsetzen'; btn.onclick = subResume; }
+      }
     } else {
       if (tEl) tEl.textContent = domSubName(syncCode) + ' hat pausiert';
       if (bEl) bEl.textContent = 'Diese Sub hat per Safewort pausiert. Frag bitte nach, was los ist — oder setze die Beziehung fort.';
@@ -2978,11 +3034,23 @@ function domSubEnforceGate(status) {
     return;
   }
   if (status === 'active') { if (btn) btn.onclick = domSubUnlock; ov.classList.remove('open'); return; }
-  if (btn) { btn.style.display = ''; btn.onclick = domSubUnlock; } // gesperrt → Standard-Aktion (Freischalten)
+  // gesperrt (pending / noch nicht per Zusatz-Abo freigeschaltet)
   if (isDomT) {
-    if (tEl) tEl.textContent = 'Zusatz-Abo für diese Sub';
-    if (bEl) bEl.textContent = 'Diese Sub ist noch nicht freigeschaltet. Im fertigen Stand schaltest du sie per Zusatz-Abo frei — zum Testen geht es direkt per Knopf.';
-    if (btn) { btn.style.display = ''; btn.textContent = 'Zum Testen freischalten'; }
+    const dev = (location.search.indexOf('dev=1') !== -1);
+    if (dev) {
+      if (tEl) tEl.textContent = 'Zusatz-Sub (Test)';
+      if (bEl) bEl.textContent = 'Test-Modus: ohne Zahlung freischalten.';
+      if (btn) { btn.style.display = ''; btn.textContent = 'Test-Freischalten'; btn.onclick = domSubUnlock; }
+    } else if (isIOSApp) {
+      if (tEl) tEl.textContent = 'Zusatz-Sub';
+      if (bEl) bEl.textContent = 'Weitere Subs sind in der App-Store-Version in Vorbereitung. In der Web-App (Safari) kannst du sie schon freischalten.';
+      if (btn) btn.style.display = 'none';
+    } else {
+      const pp = (PLAN_PRICES.addon && PLAN_PRICES.addon[REGION]) || PLAN_PRICES.addon.eur;
+      if (tEl) tEl.textContent = 'Zusatz-Sub freischalten';
+      if (bEl) bEl.innerHTML = 'Schalte diese Sub mit einem Zusatz-Abo frei — ' + pp.month + ' / Monat, jederzeit kündbar.<br><a href="#" onclick="event.preventDefault();startAddonCheckout(syncCode,\'year\');" style="color:var(--accent);font-size:12.5px;display:inline-block;margin-top:6px;">oder Jahresabo ' + pp.year + '</a>';
+      if (btn) { btn.style.display = ''; btn.textContent = 'Freischalten'; btn.onclick = function(){ startAddonCheckout(syncCode, 'month'); }; }
+    }
   } else {
     if (tEl) tEl.textContent = 'Wartet auf Freischaltung';
     if (bEl) bEl.textContent = 'Dein Dom muss diese Beziehung noch freischalten. Sobald das passiert ist, erscheinen hier deine Aufgaben.';
@@ -3454,8 +3522,9 @@ function initSync(code, opts) {
     // Safewort (Pause/Beenden/Fortsetzen) und die Registry-Spiegelung. In normalen Modi neutralisieren.
     if (window._isSubStrand || window._isDomTab) {
       window._subStrandStatus = data && data.status;
+      window._subStrandPausedBy = (data && data.safeword && data.safeword.by) || null; // 'sub' (Safewort) oder 'dom' (Dom-Pause)
       if (window._isSubStrand && data && data.mainCode) window._subStrandMainCode = data.mainCode;
-    } else { window._subStrandStatus = null; }
+    } else { window._subStrandStatus = null; window._subStrandPausedBy = null; }
     // Dom-Mehr-Sub: Gate für gesperrte Sub-Tabs/Sub-Beziehung; in allen anderen Modi (Hauptsub etc.) schließt es das Overlay wieder.
     if (typeof domSubEnforceGate === 'function') domSubEnforceGate(data && data.status);
     if (localWriting) return;
@@ -3484,6 +3553,14 @@ function initSync(code, opts) {
     setSyncStatus('synced');
     setConnStatus(true);
     loadSubscription(data);
+    // Dom-Mehr-Sub: Strang ECHT bezahlt (Abo premium via Webhook), aber Status noch nicht 'active'?
+    // → einmalig freischalten. So wirkt der echte Stripe-Kauf wie das frühere manuelle Freischalten.
+    if ((window._isDomTab || window._isSubStrand) && currentPlan === 'premium'
+        && data && data.status !== 'active' && data.status !== 'ended' && data.status !== 'paused') {
+      try { db.ref('strands/' + syncCode + '/status').set('active'); } catch(e){}
+      const _mc = (data && data.mainCode) || window._domMainCode || window._subStrandMainCode;
+      if (_mc) { try { db.ref('pflichten/' + _mc + '/subs/' + syncCode + '/status').set('active'); db.ref('pflichten/' + _mc + '/subs/' + syncCode + '/premium').set(true); } catch(e){} }
+    }
   }, (err) => {
     setSyncStatus('error');
     setConnStatus(false);
@@ -5511,7 +5588,9 @@ const CURRENCY = isSwiss() ? 'CHF' : '€';
 
 const PLAN_PRICES = {
   basic: { eur: { month: '6,99 €', year: '69 €', monthlyInYear: '5,75 €', intro: '1,50 €' }, chf: { month: '9,90 CHF', year: '89 CHF', monthlyInYear: '7,42 CHF', intro: '1,50 CHF' } },
-  premium: { eur: { month: '11,99 €', year: '99 €', monthlyInYear: '8,25 €', intro: '2,90 €' }, chf: { month: '14,90 CHF', year: '129 CHF', monthlyInYear: '10,75 CHF', intro: '2,90 CHF' } }
+  premium: { eur: { month: '11,99 €', year: '99 €', monthlyInYear: '8,25 €', intro: '2,90 €' }, chf: { month: '14,90 CHF', year: '129 CHF', monthlyInYear: '10,75 CHF', intro: '2,90 CHF' } },
+  // Dom-Mehr-Sub: Zusatz-Sub = halbes Premium (EUR 11,99→5,99 / 99→49,50; CHF 14,90→7,45 / 129→64,50).
+  addon: { eur: { month: '5,99 €', year: '49,90 €', monthlyInYear: '4,16 €' }, chf: { month: '7,90 CHF', year: '69,90 CHF', monthlyInYear: '5,83 CHF' } }
 };
 // Intro-Pricing aktiv: 1. Monat zum Intro-Preis (Coupons serverseitig in create-checkout.php), ab Monat 2 voller Preis.
 const INTRO_ACTIVE = true;
@@ -5528,6 +5607,11 @@ const ALL_PRICE_IDS = {
   premium_eur_year:  'price_1TdBAXBsKqUFNQCkvLsLHld6',
   premium_chf_month: 'price_1TdBAZBsKqUFNQCkoIZpGlsG',
   premium_chf_year:  'price_1TdBAZBsKqUFNQCk0ZFpa2xn',
+  // Dom-Mehr-Sub Zusatz-Sub — PLATZHALTER: in Stripe anlegen, echte Price-IDs hier UND in api/.env (PRICE_ADDON_*) eintragen.
+  addon_eur_month:  'price_ADDON_EUR_MONTH_TODO',
+  addon_eur_year:   'price_ADDON_EUR_YEAR_TODO',
+  addon_chf_month:  'price_ADDON_CHF_MONTH_TODO',
+  addon_chf_year:   'price_ADDON_CHF_YEAR_TODO',
 };
 function getPriceId(plan, period) {
   return ALL_PRICE_IDS[plan + '_' + REGION + '_' + period];
@@ -5683,6 +5767,34 @@ async function startCheckout(plan) {
     alert('Connection error');
     if (btn) { btn.textContent = origText; btn.disabled = false; }
   }
+}
+
+// ── DOM-MEHR-SUB: Zusatz-Sub-Checkout (Add-on pro Sub) ──
+// Web/PWA: echter Stripe-Checkout, targetType 'strand' → Webhook schreibt strands/{subId}/subscription
+// (Per-Strang-Routing existiert schon). iOS: Add-on kommt über StoreKit (Phase 2, Tobi) → Hinweis.
+async function startAddonCheckout(subId, period) {
+  subId = subId || syncCode;
+  period = period || 'month';
+  if (!subId) return;
+  if (isIOSApp) {
+    alert('Zusatz-Subs sind in der App-Store-Version in Vorbereitung. Aktuell über die Web-App (Safari) buchbar.');
+    return;
+  }
+  const priceId = ALL_PRICE_IDS['addon_' + REGION + '_' + period];
+  if (!priceId || priceId.indexOf('_TODO') !== -1) {
+    alert('Der Zusatz-Sub-Preis ist in Stripe noch nicht hinterlegt (Platzhalter). Lege das Produkt an und trage die Price-IDs ein.');
+    return;
+  }
+  try {
+    const res = await fetch(API_BASE + 'create-checkout.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priceId, pairCode: syncCode, targetType: 'strand', targetId: subId, returnUrl: window.location.href.split('?')[0] })
+    });
+    const data = await res.json();
+    if (data.url) { window.location.href = data.url; }
+    else { alert(data.error || 'Fehler beim Checkout'); }
+  } catch(e) { console.error('Addon checkout error:', e); alert('Verbindungsfehler'); }
 }
 
 // ── iOS IAP Helpers ──────────────────────────────────────────────────────────
