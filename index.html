@@ -1871,6 +1871,7 @@ function setLanguage(lang) {
   setConnStatus(navigator.onLine && !!currentRef);
   if (document.getElementById('page-month').classList.contains('active')) renderMonth();
   if (document.getElementById('page-history').classList.contains('active')) renderHistory();
+  if (document.getElementById('page-stats').classList.contains('active')) renderStats();
   updateSubUI();
   updatePricingDisplay();
   applyFeatureGating();
@@ -3205,8 +3206,17 @@ function initSync(code, opts) {
       localStorage.removeItem('pflichten_rewards');
       localStorage.removeItem('pflichten_tasks');
     } catch(e) {}
-    // Globale Wochendaten/Ziele sofort zurücksetzen → keine Punkte-/Ziel-Leaks beim Wechsel auf eine (leere) Beziehung
+    // Alle beziehungs-spezifischen Globals sofort zurücksetzen → keine Leaks beim Wechsel auf eine
+    // andere/leere Beziehung. Woche, Monat, Verlauf UND Statistik leiten sich ALLE rein aus
+    // weekData + tasks + goals (+ Periode) ab — wird hier nichts genullt, „blitzt" die alte Sub durch,
+    // bis der neue Firebase-Snapshot eintrifft.
     weekData = {}; goalWeek = 0; goalMonth2 = 0;
+    tasks = []; categories = []; rewardWeekName = ''; rewardMonth2Name = '';
+    // Ansichts-Periode pro Beziehung frisch starten (sonst Monat/Statistik auf einer vom alten Tab
+    // übernommenen, evtl. leeren Periode).
+    currentWeekOffset = 0; currentMonthDate = new Date(); historyView = 'week';
+    // Sekundär-Ansichten (Monat/Verlauf/Statistik) sofort leeren, damit nichts Altes stehen bleibt.
+    if (typeof clearSecondaryViews === 'function') clearSecondaryViews();
   }
   syncCode = code;
   saveCodeLocally(code);
@@ -3309,7 +3319,17 @@ function applySyncData(data) {
   loadGoals(data);
   if (document.getElementById('page-month').classList.contains('active')) renderMonth();
   if (document.getElementById('page-history').classList.contains('active')) renderHistory();
+  if (document.getElementById('page-stats').classList.contains('active')) renderStats();
   if (document.getElementById('page-settings').classList.contains('active')) { renderEditList(); renderCatList(); }
+}
+
+// Dom-Mehr-Sub: Sekundär-Ansichten (Monat/Verlauf/Statistik) neu rendern, falls aktiv.
+// Beim Tab-Wechsel mit leeren Globals aufgerufen → die alte Beziehung verschwindet sofort,
+// statt bis zum neuen Snapshot „durchzublitzen". Jeder Aufruf einzeln abgesichert.
+function clearSecondaryViews() {
+  try { if (document.getElementById('page-month') && document.getElementById('page-month').classList.contains('active')) renderMonth(); } catch(e) {}
+  try { if (document.getElementById('page-history') && document.getElementById('page-history').classList.contains('active')) renderHistory(); } catch(e) {}
+  try { if (document.getElementById('page-stats') && document.getElementById('page-stats').classList.contains('active')) renderStats(); } catch(e) {}
 }
 
 function normalizeWeekData() {
@@ -3363,6 +3383,7 @@ function saveData() {
         localWriting = false;
         if (document.getElementById('page-month').classList.contains('active')) renderMonth();
         if (document.getElementById('page-history').classList.contains('active')) renderHistory();
+        if (document.getElementById('page-stats').classList.contains('active')) renderStats();
       }, 300);
     })
     .catch(err => { setSyncStatus('error'); localWriting = false; console.error(err); });
