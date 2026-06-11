@@ -2,27 +2,20 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1a1a2e">
 <title>Devotion</title>
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" sizes="64x64" href="./favicon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+<link rel="manifest" href="https://getdevotion.app/app/manifest.json">
+<link rel="icon" type="image/png" sizes="64x64" href="https://getdevotion.app/app/favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://getdevotion.app/app/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://getdevotion.app/app/icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- Google AdSense — Replace ca-pub-8203510215151522 with your AdSense publisher ID -->
-<script>
-// AdSense nur außerhalb der iOS-App laden (Apple ATT / Google-Policy)
-if (!/DevotionApp/i.test(navigator.userAgent)) {
-  var adsScript = document.createElement('script');
-  adsScript.async = true;
-  adsScript.crossOrigin = 'anonymous';
-  adsScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8203510215151522';
-  document.head.appendChild(adsScript);
-}
-</script>
+<!-- Werbung deaktiviert: App ist aktuell KOMPLETT werbefrei (Google AdSense gibt 18+-Inhalte nicht frei).
+     Monetarisierung über Abos; Alternativen (Affiliate/Partner) später, wenn die App eine Weile draußen ist.
+     AdSense-Script wird bewusst NICHT geladen. -->
+
 <style>
 :root {
   --bg: #1a1a2e; --surface: #16213e; --surface2: #0f3460;
@@ -444,8 +437,7 @@ body.has-ads { padding-bottom:200px; }
 .role-hint { font-size:12px; color:var(--text2); margin-top:14px; text-align:center; }
 
 #page-week .header { position:relative; }
-.role-badge { position:absolute; top:calc(8px + env(safe-area-inset-top,0px)); left:10px; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:pointer; user-select:none; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.45); transition:transform .15s; }
-.role-badge:active { transform:scale(.9); }
+.role-badge { position:absolute; top:calc(8px + env(safe-area-inset-top,0px)); left:10px; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; cursor:default; user-select:none; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,.45); pointer-events:none; }
 .role-badge-dom { background:#e5384a; border:2px solid #ff6b7a; color:#fff; }
 .role-badge-sub { background:#2f86d6; border:2px solid #6bb0ee; color:#fff; }
 .role-pill { font-size:12px; font-weight:700; letter-spacing:.3px; padding:5px 13px; border-radius:999px; user-select:none; }
@@ -478,7 +470,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- ── Splash Screen ── -->
 <div id="splashScreen" style="position:fixed;inset:0;z-index:9999;background:#1a1a2e;transition:opacity .5s;">
-  <img src="./devotion-splash-final.png" alt="Devotion" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
+  <img src="https://getdevotion.app/app/devotion-splash-final.png" alt="Devotion" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">
 </div>
 
 <div class="sync-bar" id="syncBar"></div>
@@ -489,7 +481,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- LANGUAGE SELECT -->
 <div class="setup-screen hidden" id="langSelectScreen">
-  <div style="margin-bottom:16px;"><img src="./devotion-triskele.png" alt="Devotion" style="width:100%;max-width:280px;"></div>
+  <div style="margin-bottom:16px;"><img src="https://getdevotion.app/app/devotion-triskele.png" alt="Devotion" style="width:100%;max-width:280px;"></div>
   <h2 style="margin-bottom:8px;">Sprache / Language</h2>
   <p style="margin-bottom:32px;color:var(--text2);font-size:14px;">Wähle deine Sprache<br>Choose your language</p>
   <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;">
@@ -504,7 +496,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- AGE CHECK -->
 <div class="setup-screen hidden" id="ageCheckScreen">
-  <div class="setup-logo"><img src="./icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
+  <div class="setup-logo"><img src="https://getdevotion.app/app/icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
   <h2>Altersverifizierung</h2>
   <p>Diese App enthält Inhalte für Erwachsene. Bitte bestätige dein Alter, um fortzufahren.</p>
   <div class="setup-error" id="ageError"></div>
@@ -522,22 +514,38 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 
 <!-- ONBOARDING -->
 <div class="setup-screen hidden" id="onboardScreen1">
-  <div style="margin-bottom:8px;"><img src="./devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
+  <div style="margin-bottom:8px;"><img src="https://getdevotion.app/app/devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
   <h2>Willkommen bei Devotion</h2>
   <p>Die App für Paare, die ihre D/s-Dynamik strukturieren möchten. Erstelle Aufgaben, vergib Punkte und verfolge den Fortschritt — sicher und diskret.</p>
   <button class="setup-btn" onclick="showOnboard2()">Weiter</button>
   <div style="display:flex;gap:8px;margin-top:16px;">
     <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);"></div>
     <div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+    <div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
   </div>
 </div>
 
 <div class="setup-screen hidden" id="onboardScreen2">
-  <div style="margin-bottom:8px;"><img src="./devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
+  <div style="margin-bottom:8px;"><img src="https://getdevotion.app/app/devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
   <h2>Gemeinsam verbunden</h2>
   <p>Beide Partner nutzen denselben Code, um Aufgaben, Punkte und Belohnungen in Echtzeit zu teilen. Alles bleibt privat zwischen euch.</p>
+  <button class="setup-btn" onclick="showOnboard3()">Weiter</button>
+  <div style="display:flex;gap:8px;margin-top:16px;">
+    <div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+    <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);"></div>
+    <div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
+  </div>
+</div>
+
+<!-- ONBOARDING 3: Anleitung -->
+<div class="setup-screen hidden" id="onboardScreen3">
+  <div style="margin-bottom:8px;"><img src="https://getdevotion.app/app/devotion-triskele.png" alt="Devotion" style="width:100%;max-width:320px;"></div>
+  <h2>Hilfe &amp; Anleitung</h2>
+  <p>Eine ausführliche Anleitung mit allen Funktionen findest du jederzeit auf unserer Webseite.</p>
+  <a class="setup-btn-sec" id="onboard3Link" href="https://getdevotion.app/anleitung.html" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">Anleitung ansehen</a>
   <button class="setup-btn" onclick="finishOnboarding()">Los geht's</button>
   <div style="display:flex;gap:8px;margin-top:16px;">
+    <div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
     <div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);"></div>
     <div style="width:10px;height:10px;border-radius:50%;background:var(--accent);"></div>
   </div>
@@ -550,7 +558,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     <button id="setupLangEN" onclick="setLanguage('en')">EN</button>
   </div>
   <div class="setup-app-title" id="setupAppTitle">Devotion</div>
-  <div class="setup-logo"><img src="./icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
+  <div class="setup-logo"><img src="https://getdevotion.app/app/icon-192.png" alt="Devotion" style="width:72px;height:72px;border-radius:16px;"></div>
   <h2>Verbindung einrichten</h2>
   <p>Gib einen gemeinsamen Code ein, damit beide Handys dieselben Daten sehen.</p>
   <div class="setup-error" id="setupError"></div>
@@ -686,7 +694,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
   <div class="header">
     <h1 contenteditable="true" spellcheck="false" id="headerTitle" oninput="saveHeaderText()">Meine Aufgaben</h1>
     <div class="sub" contenteditable="true" spellcheck="false" id="headerSub" oninput="saveHeaderText()">Tippen zum Bearbeiten</div>
-    <span id="roleBadge" class="role-badge" style="display:none" onclick="openRoleChange()" title="Rolle ändern"></span>
+    <span id="roleBadge" class="role-badge" style="display:none" aria-hidden="true"></span>
   </div>
   <!-- DOM-MEHR-SUB: Tab-Leiste — der Dom schaltet zwischen seinen Subs um (Tab 1 = Hauptsub) -->
   <div id="domTabsBar" style="display:none;gap:7px;padding:8px 16px 2px;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
@@ -1038,6 +1046,7 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
     </a>
   </div>
   <div class="legal-links" style="display:flex;justify-content:center;gap:20px;padding:16px;font-size:13px;">
+    <a href="https://getdevotion.app/anleitung.html" target="_blank" style="color:var(--text2);text-decoration:none;" id="legalGuide">Anleitung</a>
     <a href="https://getdevotion.app/datenschutz.html" target="_blank" style="color:var(--text2);text-decoration:none;" id="legalPrivacy">Datenschutz</a>
     <a href="https://getdevotion.app/impressum.html" target="_blank" style="color:var(--text2);text-decoration:none;" id="legalImprint">Impressum</a>
     <a href="https://getdevotion.app/agb.html" target="_blank" style="color:var(--text2);text-decoration:none;" id="legalTerms">AGB</a>
@@ -1208,6 +1217,11 @@ src="https://www.facebook.com/tr?id=1339140638371293&ev=PageView&noscript=1"/></
 // ── iOS App Detection (must be first — used throughout) ──
 const isIOSApp = /DevotionApp/i.test(navigator.userAgent);
 
+// ── HTML-Escape (XSS-Schutz) — global, fuer alle innerHTML-Ausgaben mit Nutzertext ──
+// Aufgabennamen, Bemerkungen, Feedback etc. kommen aus Firebase (vom Partner geschrieben)
+// und werden teils per innerHTML gesetzt. IMMER durch escHtml() leiten.
+function escHtml(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
 // ── App-Version: NUR HIER bumpen — befüllt Setup-Screen (#setupVersion) + Einstellungen-Badge (#versionBadge) ──
 const APP_VERSION = '1.0.1-fix11';
 document.getElementById('setupVersion').textContent = 'v' + APP_VERSION;
@@ -1333,7 +1347,11 @@ const I18N = {
     onboard1Btn: 'Weiter',
     onboard2Title: 'Gemeinsam verbunden',
     onboard2Desc: 'Beide Partner nutzen denselben Code, um Aufgaben, Punkte und Belohnungen in Echtzeit zu teilen. Alles bleibt privat zwischen euch.',
-    onboard2Btn: 'Los geht\'s',
+    onboard2Btn: 'Weiter',
+    onboard3Title: 'Hilfe & Anleitung',
+    onboard3Desc: 'Eine ausführliche Anleitung mit allen Funktionen findest du jederzeit auf unserer Webseite.',
+    onboard3Link: 'Anleitung ansehen',
+    onboard3Btn: 'Los geht\'s',
     setupTitle: 'Einloggen',
     setupDesc: 'Gib einen gemeinsamen Code ein, damit beide Handys dieselben Daten sehen.',
     setupConnect: 'Einloggen',
@@ -1544,21 +1562,23 @@ const I18N = {
     pricingPremiumF5: 'Detaillierte Charts',
     pricingPremiumF6: 'PDF Export',
     pricingPremiumF7: 'Prioritäts-Support',
+    pricingPremiumFMulti: 'Mehr-Sub- & Mehr-Herren-Modus',
     pricingIntro: 'Erster Monat',
     pricingIntroThen: 'danach',
     pricingIntroBtnText: 'Jetzt für {price} testen',
     premiumOnly: 'Premium',
     adLabel: 'Anzeige',
     adClose: 'Schliessen',
-    adUpgradeHint: 'Werbefrei mit Premium',
+    adUpgradeHint: 'Alle Funktionen mit Premium',
     premiumUpgradeHint: 'Alle Features mit Premium',
     trialInfo: 'Auf Premium upgraden',
     trialExpiredTitle: 'Trial abgelaufen',
     trialExpiredDesc: 'Dein kostenloser Test ist vorbei. Wähle einen Plan, um weiterzumachen.',
     paymentSuccess: 'Zahlung erfolgreich! Dein Abo ist jetzt aktiv.',
     paymentCancel: 'Zahlung abgebrochen.',
-    taskLimit: 'Max. 5 Aufgaben im Trial. Upgrade für unbegrenzte Aufgaben.',
+    taskLimit: 'Max. 5 Aufgaben in der Gratis-Version. Upgrade für unbegrenzte Aufgaben.',
     rewardLimit: 'Max. 1 Belohnung im Trial.',
+    legalGuide: 'Anleitung',
     legalPrivacy: 'Datenschutz',
     legalImprint: 'Impressum',
     legalTerms: 'AGB',
@@ -1663,7 +1683,11 @@ const I18N = {
     onboard1Btn: 'Next',
     onboard2Title: 'Connected together',
     onboard2Desc: 'Both partners use the same code to share tasks, points and rewards in real time. Everything stays private between you.',
-    onboard2Btn: 'Let\'s go',
+    onboard2Btn: 'Next',
+    onboard3Title: 'Help & Guide',
+    onboard3Desc: 'A detailed guide covering all features is always available on our website.',
+    onboard3Link: 'View the guide',
+    onboard3Btn: 'Let\'s go',
     setupTitle: 'Log in',
     setupDesc: 'Enter a shared code so both phones see the same data.',
     setupConnect: 'Log in',
@@ -1874,21 +1898,23 @@ const I18N = {
     pricingPremiumF5: 'Detailed charts',
     pricingPremiumF6: 'PDF export',
     pricingPremiumF7: 'Priority support',
+    pricingPremiumFMulti: 'Multi-sub & multi-dom mode',
     pricingIntro: 'First month',
     pricingIntroThen: 'then',
     pricingIntroBtnText: 'Try for {price}',
     premiumOnly: 'Premium',
     adLabel: 'Ad',
     adClose: 'Close',
-    adUpgradeHint: 'Go ad-free with Premium',
+    adUpgradeHint: 'Unlock everything with Premium',
     premiumUpgradeHint: 'Unlock all features with Premium',
     trialInfo: 'Upgrade to Premium',
     trialExpiredTitle: 'Trial expired',
     trialExpiredDesc: 'Your free trial has ended. Choose a plan to continue.',
     paymentSuccess: 'Payment successful! Your subscription is now active.',
     paymentCancel: 'Payment canceled.',
-    taskLimit: 'Max. 5 tasks in trial. Upgrade for unlimited tasks.',
+    taskLimit: 'Max. 5 tasks in the free version. Upgrade for unlimited tasks.',
     rewardLimit: 'Max. 1 reward in trial.',
+    legalGuide: 'Guide',
     legalPrivacy: 'Privacy Policy',
     legalImprint: 'Legal Notice',
     legalTerms: 'Terms',
@@ -1958,6 +1984,15 @@ function applyLanguage() {
   if (ob2P) ob2P.textContent = t('onboard2Desc');
   if (ob2Btn) ob2Btn.textContent = t('onboard2Btn');
 
+  const ob3H2 = document.querySelector('#onboardScreen3 h2');
+  const ob3P = document.querySelector('#onboardScreen3 p');
+  const ob3Link = document.getElementById('onboard3Link');
+  const ob3Btn = document.querySelector('#onboardScreen3 .setup-btn');
+  if (ob3H2) ob3H2.textContent = t('onboard3Title');
+  if (ob3P) ob3P.textContent = t('onboard3Desc');
+  if (ob3Link) ob3Link.textContent = t('onboard3Link');
+  if (ob3Btn) ob3Btn.textContent = t('onboard3Btn');
+
   // Setup screen
   const setupH2 = document.querySelector('#setupScreen h2');
   const setupP = document.querySelector('#setupScreen p');
@@ -1982,7 +2017,7 @@ function applyLanguage() {
 
   // Week reward (custom name or default)
   const wrTitle = document.querySelector('.week-reward-title span:first-child');
-  if (wrTitle) wrTitle.innerHTML = SVG.gift + ' ' + (rewardWeekName || t('weekReward'));
+  if (wrTitle) wrTitle.innerHTML = SVG.gift + ' ' + (rewardWeekName ? escHtml(rewardWeekName) : t('weekReward'));
 
   // Remarks
   const remLabel = document.getElementById('remarksLabel');
@@ -2114,6 +2149,7 @@ function applyLanguage() {
   if (lp) lp.textContent = t('legalPrivacy');
   if (li) li.textContent = t('legalImprint');
   if (lt) lt.textContent = t('legalTerms');
+  const lg = document.getElementById('legalGuide'); if (lg) lg.textContent = t('legalGuide');
 
   // Update html lang attribute
   document.documentElement.lang = currentLang;
@@ -2275,7 +2311,7 @@ function isSub() { return currentRole === 'sub' && canUse('roles'); }
 // ── MEHR-HERREN-MODUS (Fundament, v1 in Bau in work/) ──
 // Der Dom der Hauptpaarung ist der Hauptherr (Stammherr). Mehr-Herren ist Premium-only.
 function isMainHerr() { return isDom() && !window._isNebenherr; } // Hauptherr = Dom der Hauptpaarung, NICHT ein Nebenherr in seinem Strang
-function mehrHerrenAvailable() { return isMainHerr() && currentPlan === 'premium'; }
+function mehrHerrenAvailable() { return isMainHerr(); } // TEST-BUILD: Gate AUS
 function getStrandRegistry() { return (window._strandRegistry && typeof window._strandRegistry === 'object') ? window._strandRegistry : {}; }
 function strandList() { const r = getStrandRegistry(); return Object.keys(r).map(id => Object.assign({ strandId: id }, r[id])); }
 function generateStrandCode() { const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let c=''; for(let i=0;i<8;i++) c+=chars[Math.floor(Math.random()*chars.length)]; return c; }
@@ -2805,6 +2841,7 @@ function mhStrandUpsell() { showPricing(); }
 const MAX_DOM_SUBS = 50; // kein echtes Limit beim Add-on-Modell (pro Sub bezahlt) — hoher Sicherheits-Deckel gegen UI-/Abuse-Ausreißer
 window._domMainCode = window._domMainCode || null; // Code der Hauptpaarung (Tab 1)
 window._domSubs = window._domSubs || {};           // subId -> Registry-Eintrag (lokaler Spiegel)
+window._domExtraSeats = window._domExtraSeats || 0; // iOS-Add-on: bezahlte Zusatz-Sitze (Stufe +1..+4), tab-unabhängig
 
 // Die Tab-Leiste sieht nur der Dom der Hauptpaarung (kein Nebenherr, keine Sub).
 function domTabsEligible() { return isMainHerr() && !!window._domMainCode; }
@@ -2842,6 +2879,22 @@ function watchDomSubs() {
     if (typeof renderDomTabs === 'function') renderDomTabs();
     if (typeof updateMainSubNameCard === 'function') updateMainSubNameCard();
   }, () => {});
+  // Abo der Hauptpaarung live spiegeln — tab-unabhängig. Liefert (a) extraSeats (bezahlte iOS-Stufe)
+  // und (b) ob die Hauptpaarung echtes Premium hat (Pflicht, damit Zusatz-Subs überhaupt kaufbar sind).
+  if (window._domSubscriptionRef) { try { window._domSubscriptionRef.off(); } catch(e){} }
+  window._domSubscriptionRef = db.ref('pflichten/' + window._domMainCode + '/subscription');
+  window._domSubscriptionRef.on('value', snap => {
+    const s = snap.val() || null;
+    window._domMainSubscription = s;
+    window._domExtraSeats = (s && s.extraSeats) || 0;
+    // Offenes Gate eines gesperrten Sub-Tabs auffrischen (Premium-Status / freier Platz kann sich ändern).
+    if (window._isDomTab && typeof domSubEnforceGate === 'function') domSubEnforceGate(window._subStrandStatus);
+  }, () => {});
+  // Option 2: createdAt der Hauptpaarung laden → Ende des 30-Tage-Trials (Gratis-Zusatz-Sub im Trial).
+  db.ref('pflichten/' + window._domMainCode + '/createdAt').once('value').then(cs => {
+    window._domMainCreatedAt = cs.val() || null;
+    if (window._isDomTab && typeof domSubEnforceGate === 'function') domSubEnforceGate(window._subStrandStatus);
+  }).catch(() => {});
 }
 
 // Neue Sub-Beziehung anlegen (leerer dom-verankerter Strang + Registry-Eintrag); Code zurückgeben.
@@ -3041,15 +3094,48 @@ function domSubEnforceGate(status) {
   // gesperrt (pending / noch nicht per Zusatz-Abo freigeschaltet)
   if (isDomT) {
     if (btn2) { btn2.style.display = ''; btn2.onclick = function(){ switchDomTab(window._domMainCode); }; } // raus ohne zu kaufen
-    const dev = (location.search.indexOf('dev=1') !== -1);
-    if (dev) {
-      if (tEl) tEl.textContent = 'Zusatz-Sub (Test)';
-      if (bEl) bEl.textContent = 'Test-Modus: ohne Zahlung freischalten.';
-      if (btn) { btn.style.display = ''; btn.textContent = 'Test-Freischalten'; btn.onclick = domSubUnlock; }
+    if (!domSubAddonEligible()) {
+      if (domMainTrialActive() && trialFreeActiveCount() === 0) {
+        // Option 2: 1. Zusatz-Sub im Trial gratis testbar — Kosten offen kommunizieren.
+        const pp = (PLAN_PRICES.addon && PLAN_PRICES.addon[REGION]) || PLAN_PRICES.addon.eur;
+        const prem = (PLAN_PRICES.premium && PLAN_PRICES.premium[REGION]) || PLAN_PRICES.premium.eur;
+        const endStr = new Date(domMainTrialEndMs()).toLocaleDateString(currentLang === 'de' ? 'de-DE' : 'en-US');
+        if (tEl) tEl.textContent = 'Im Trial gratis testen';
+        if (bEl) bEl.innerHTML = 'Diesen Zusatz-Sub kannst du in deiner Testphase <b>gratis bis ' + endStr + '</b> nutzen.<br>Danach <b>' + pp.month + ' / Monat</b> (zusätzlich zum Premium-Abo ' + prem.month + ' / Monat für deinen Hauptaccount). Jederzeit kündbar.';
+        if (btn) { btn.style.display = ''; btn.disabled = false; btn.textContent = 'Gratis freischalten'; btn.onclick = function(){ domSubTrialUnlock(syncCode); }; }
+      } else {
+        // Kein aktiver Trial ODER der eine Gratis-Sub ist schon vergeben → echtes Premium + Add-on noetig.
+        if (tEl) tEl.textContent = 'Premium erforderlich';
+        if (bEl) bEl.textContent = (trialFreeActiveCount() > 0)
+          ? 'Dein gratis Test-Sub ist bereits vergeben. Jeder weitere Zusatz-Sub braucht Premium auf der Hauptpaarung plus das Add-on (' + (((PLAN_PRICES.addon && PLAN_PRICES.addon[REGION]) || PLAN_PRICES.addon.eur).month) + ' / Monat).'
+          : 'Weitere Subs sind ein Premium-Feature. Hol dir zuerst Premium für deine Hauptpaarung — danach kannst du diese Sub freischalten.';
+        if (btn) { btn.style.display = ''; btn.disabled = false; btn.textContent = 'Premium holen'; btn.onclick = domSubGoPremium; }
+      }
     } else if (isIOSApp) {
-      if (tEl) tEl.textContent = 'Zusatz-Sub';
-      if (bEl) bEl.textContent = 'Weitere Subs sind in der App-Store-Version in Vorbereitung. In der Web-App (Safari) kannst du sie schon freischalten.';
-      if (btn) btn.style.display = 'none';
+      if (!iosAddonNativeReady()) {
+        // Älterer App-Build ohne Add-on-Unterstützung → freundlicher Hinweis, KEIN Kauf-Versuch.
+        if (tEl) tEl.textContent = 'Zusatz-Sub';
+        if (bEl) bEl.textContent = 'Weitere Subs gibt es in einer neueren App-Version. Bitte aktualisiere Devotion im App Store — oder schalte die Sub in der Web-App (Safari) frei.';
+        if (btn) btn.style.display = 'none';
+      } else {
+      // iOS-Add-on Modell A: freier bezahlter Sitz → ohne Kauf zuweisen; sonst Kauf/Upgrade auf die nötige Stufe.
+      const seats = iosExtraSeats();
+      const used = iosSeatedSubIds().length;
+      if (used < seats) {
+        if (tEl) tEl.textContent = 'Zusatz-Sub freischalten';
+        if (bEl) bEl.textContent = 'In deinem Zusatz-Abo ist noch ein Platz frei (' + used + '/' + seats + ' belegt). Diese Sub ohne weitere Kosten freischalten.';
+        if (btn) { btn.style.display = ''; btn.disabled = false; btn.textContent = 'Freischalten'; btn.onclick = function(){ iosUnlockOrBuy(syncCode, 'month'); }; }
+      } else if (seats >= ADDON_MAX_TIER) {
+        if (tEl) tEl.textContent = 'Maximum erreicht';
+        if (bEl) bEl.textContent = 'Du hast die höchste Stufe (' + ADDON_MAX_TIER + ' Zusatz-Subs) erreicht. Beende eine bestehende Sub, um einen Platz frei zu machen.';
+        if (btn) btn.style.display = 'none';
+      } else {
+        const pp = (PLAN_PRICES.addon && PLAN_PRICES.addon[REGION]) || PLAN_PRICES.addon.eur;
+        if (tEl) tEl.textContent = 'Zusatz-Sub freischalten';
+        if (bEl) bEl.innerHTML = 'Schalte diese Sub mit einem Zusatz-Abo frei — ' + pp.month + ' / Monat zusätzlich, jederzeit kündbar.<br><a href="#" onclick="event.preventDefault();iosUnlockOrBuy(syncCode,\'year\');" style="color:var(--accent);font-size:12.5px;display:inline-block;margin-top:6px;">oder Jahresabo ' + pp.year + '</a>';
+        if (btn) { btn.style.display = ''; btn.disabled = false; btn.textContent = 'Freischalten'; btn.onclick = function(){ iosUnlockOrBuy(syncCode, 'month'); }; }
+      }
+      }
     } else {
       const pp = (PLAN_PRICES.addon && PLAN_PRICES.addon[REGION]) || PLAN_PRICES.addon.eur;
       if (tEl) tEl.textContent = 'Zusatz-Sub freischalten';
@@ -3076,15 +3162,31 @@ function domSubBackToStart() {
 
 // „Zum Testen freischalten" (Dom): Beziehung auf aktiv setzen (später durch den Add-on-Kauf ersetzt).
 function domSubUnlock() {
-  if (!db || !syncCode || !window._isDomTab) return;
-  try { db.ref('strands/' + syncCode + '/status').set('active'); } catch(e){}
-  // B7-Push: die wartende Sub übers Freischalten informieren — auch bei geschlossener App.
-  try { db.ref('strands/' + syncCode + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'strandStatus', status: 'active' }); } catch(e){}
-  // Test-Freischaltung → Premium für diese Beziehung (manuell; später durch den echten Add-on-Kauf ersetzt).
-  try { db.ref('strands/' + syncCode + '/subscription').set({ manual: true, plan: 'premium', status: 'active' }); } catch(e){}
+  // ENTFERNT 11.6.2026 (Sicherheit): Diese Test-Freischaltung hat client-seitig
+  // subscription{manual:true, plan:'premium'} geschrieben → Premium ohne Zahlung.
+  // Freischalten erfolgt jetzt NUR noch (a) über echten Kauf (Stripe/iOS) oder
+  // (b) manuell über die Firebase-Console (manual:true). Funktion bleibt als sicherer
+  // No-op erhalten, damit bestehende onclick-Referenzen nicht brechen.
+  const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
+}
+
+// Option 2: 1. Zusatz-Sub im Trial GRATIS freischalten. Schreibt KEIN Abo — nur ein Ablaufdatum
+// (= Ende des Hauptpaarungs-Trials). Nach Ablauf sperrt der Auto-Lock (loadSubscription) den Strang,
+// bis ein echtes Add-on gekauft wird. Echte Kaeufe (Stripe/iOS) ueberschreiben das jederzeit.
+function domSubTrialUnlock(subId) {
+  subId = subId || syncCode;
+  if (!db || !subId || !window._isDomTab) return;
+  // Sicherheits-Gegencheck: nur im aktiven Trial UND solange noch kein Gratis-Sub vergeben ist.
+  if (!domMainTrialActive() || trialFreeActiveCount() > 0) { domSubEnforceGate(window._subStrandStatus); return; }
+  const untilIso = new Date(domMainTrialEndMs()).toISOString();
+  try { db.ref('strands/' + subId + '/status').set('active'); } catch(e){}
+  try { db.ref('strands/' + subId + '/trialFreeUntil').set(untilIso); } catch(e){}
+  // Push an die wartende Sub (auch bei geschlossener App).
+  try { db.ref('strands/' + subId + '/lastActivity').set({ timestamp: firebase.database.ServerValue.TIMESTAMP, device: deviceId, type: 'strandStatus', status: 'active' }); } catch(e){}
   try { if (window._domMainCode) {
-    db.ref('pflichten/' + window._domMainCode + '/subs/' + syncCode + '/status').set('active');
-    db.ref('pflichten/' + window._domMainCode + '/subs/' + syncCode + '/premium').set(true);
+    db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/status').set('active');
+    db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/trialFree').set(true);
+    db.ref('pflichten/' + window._domMainCode + '/subs/' + subId + '/trialFreeUntil').set(untilIso);
   } } catch(e){}
   const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
 }
@@ -3558,9 +3660,11 @@ function initSync(code, opts) {
     setSyncStatus('synced');
     setConnStatus(true);
     loadSubscription(data);
-    // Dom-Mehr-Sub: Strang ECHT bezahlt (Abo premium via Webhook), aber Status noch nicht 'active'?
-    // → einmalig freischalten. So wirkt der echte Stripe-Kauf wie das frühere manuelle Freischalten.
-    if ((window._isDomTab || window._isSubStrand) && currentPlan === 'premium'
+    // Dom-Mehr-Sub: Strang ECHT bezahlt (aktives Abo via Webhook), aber Status noch nicht 'active'?
+    // → einmalig freischalten. Plan-Label egal (Add-on wird vom Webhook evtl. als 'basic' geschrieben);
+    //   entscheidend ist ein aktives/bezahltes Abo am Strang. So wirkt der echte Kauf wie das manuelle Freischalten.
+    const _strandSubActive = (function(s){ if(!s) return false; if(s.manual===true) return true; if(s.status==='active') return true; if(s.status==='canceled' && s.currentPeriodEnd && new Date(s.currentPeriodEnd) > new Date()) return true; return false; })(data && data.subscription);
+    if ((window._isDomTab || window._isSubStrand) && _strandSubActive
         && data && data.status !== 'active' && data.status !== 'ended' && data.status !== 'paused') {
       try { db.ref('strands/' + syncCode + '/status').set('active'); } catch(e){}
       const _mc = (data && data.mainCode) || window._domMainCode || window._subStrandMainCode;
@@ -3890,8 +3994,8 @@ function render() {
       <div class="task-main">
         <div class="task-nr">${tk.id}</div>
         <div class="task-info">
-          <div class="task-name">${tk.name}</div>
-          <div class="task-points">+${tk.plus} / -${tk.minus}${catName ? ' · ' + catName : ''}${tk.reminderTime ? ' · ' + SVG.clock + ' ' + tk.reminderTime : ''}</div>
+          <div class="task-name">${escHtml(tk.name)}</div>
+          <div class="task-points">+${tk.plus} / -${tk.minus}${catName ? ' · ' + escHtml(catName) : ''}${tk.reminderTime ? ' · ' + SVG.clock + ' ' + tk.reminderTime : ''}</div>
           ${proofHtml}
         </div>
         ${proofBtn}
@@ -3925,7 +4029,7 @@ function updateScores() {
   if (chkEl) chkEl.innerHTML = (goalWeek > 0 && clamped >= goalWeek) ? SVG.check : '';
   // Update week reward title with custom name
   const wrT = document.querySelector('.week-reward-title span:first-child');
-  if (wrT) wrT.innerHTML = SVG.gift + ' ' + (rewardWeekName || t('weekReward'));
+  if (wrT) wrT.innerHTML = SVG.gift + ' ' + (rewardWeekName ? escHtml(rewardWeekName) : t('weekReward'));
 }
 
 // ── RENDER MONTH ──
@@ -3982,7 +4086,7 @@ function renderMonth() {
     const row = document.createElement('div');
     row.className = 'month-task-row';
     row.innerHTML = `
-      <div class="month-task-name">${tk.name}</div>
+      <div class="month-task-name">${escHtml(tk.name)}</div>
       <div class="month-task-bar-wrap"><div class="month-task-bar"><div class="month-task-bar-fill" style="width:${pct}%;background:${color}"></div></div></div>
       <div class="month-task-score" style="color:${color}">${net > 0 ? '+' : ''}${net}</div>`;
     breakdown.appendChild(row);
@@ -4095,7 +4199,7 @@ function showHistoryDetail(key) {
   document.getElementById('modalTitle').textContent = fmt(mon) + ' – ' + fmt(sun) + ' ' + sun.getFullYear();
   let html = '';
   for (const task of tasks) {
-    html += '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">' + task.name + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+    html += '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:600;margin-bottom:4px">' + escHtml(task.name) + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
     for (let di = 0; di < 7; di++) {
       const de = (wd.days && (wd.days[di] || wd.days[String(di)])) || {};
       const s = de[task.id] || de[String(task.id)] || '';
@@ -4109,21 +4213,21 @@ function showHistoryDetail(key) {
     const dayRemarksHtml = [];
     for (let di = 0; di < 7; di++) {
       const dr = wd.dayRemarks[di] || wd.dayRemarks[String(di)];
-      if (dr) dayRemarksHtml.push('<span style="font-size:12px"><strong>' + DAY_NAMES[di] + ':</strong> ' + dr + '</span>');
+      if (dr) dayRemarksHtml.push('<span style="font-size:12px"><strong>' + DAY_NAMES[di] + ':</strong> ' + escHtml(dr) + '</span>');
     }
     if (dayRemarksHtml.length) {
       html += '<div style="margin-top:12px;font-size:13px;color:var(--text2);border-top:1px solid rgba(255,255,255,0.08);padding-top:12px">' + SVG.note + ' ' + dayRemarksHtml.join('<br>') + '</div>';
     }
   }
   // Legacy: show old week-level remarks
-  if (wd.remarks) html += '<div style="margin-top:8px;font-size:13px;color:var(--text2)">' + SVG.note + ' ' + wd.remarks + '</div>';
+  if (wd.remarks) html += '<div style="margin-top:8px;font-size:13px;color:var(--text2)">' + SVG.note + ' ' + escHtml(wd.remarks) + '</div>';
   // Show feedback in history
   if (wd.feedback && (wd.feedback.mood || wd.feedback.rating || wd.feedback.text)) {
     html += '<div style="margin-top:12px;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px">';
     html += '<div style="font-size:13px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:4px">' + SVG.mail + ' ' + t('feedbackReport') + '</div>';
     if (wd.feedback.mood) html += '<div style="font-size:13px;color:var(--text2)">' + t('feedbackMood') + ': ' + MOOD_EMOJIS[wd.feedback.mood] + '</div>';
     if (wd.feedback.rating) html += '<div style="font-size:13px;color:var(--text2)">' + t('feedbackRating') + ': ' + '★'.repeat(wd.feedback.rating) + '☆'.repeat(5 - wd.feedback.rating) + '</div>';
-    if (wd.feedback.text) html += '<div style="font-size:13px;color:var(--text2);margin-top:4px">' + wd.feedback.text + '</div>';
+    if (wd.feedback.text) html += '<div style="font-size:13px;color:var(--text2);margin-top:4px">' + escHtml(wd.feedback.text) + '</div>';
     html += '</div>';
   }
   document.getElementById('modalContent').innerHTML = html;
@@ -4140,18 +4244,25 @@ function saveHeaderText() {
     currentRef.child('headerTitle').set(title);
     currentRef.child('headerSub').set(sub);
   }
+  // PRO CODE speichern (nicht global) — sonst leakt der Header in andere/neue Codes.
   try {
-    localStorage.setItem('pflichten_headerTitle', title);
-    localStorage.setItem('pflichten_headerSub', sub);
+    if (syncCode) {
+      localStorage.setItem('pflichten_headerTitle_' + syncCode, title);
+      localStorage.setItem('pflichten_headerSub_' + syncCode, sub);
+    }
   } catch(e) {}
 }
 function loadHeaderText(data) {
   const titleEl = document.getElementById('headerTitle');
   const subEl = document.getElementById('headerSub');
-  const ht = (data && data.headerTitle) || localStorage.getItem('pflichten_headerTitle');
-  const hs = (data && data.headerSub) || localStorage.getItem('pflichten_headerSub');
-  if (ht && titleEl && !titleEl.matches(':focus')) titleEl.textContent = ht;
-  if (hs && subEl && !subEl.matches(':focus')) subEl.textContent = hs;
+  // Nur den PRO-CODE-Cache als Fallback nutzen (kein globaler Key → kein Leak zwischen Codes),
+  // und bei fehlendem Wert IMMER den Standard setzen (sonst bleibt der alte Header eines anderen Codes stehen).
+  let lsTitle = null, lsSub = null;
+  try { if (syncCode) { lsTitle = localStorage.getItem('pflichten_headerTitle_' + syncCode); lsSub = localStorage.getItem('pflichten_headerSub_' + syncCode); } } catch(e) {}
+  const ht = (data && data.headerTitle) || lsTitle || t('defaultTitle');
+  const hs = (data && data.headerSub) || lsSub || t('defaultSub');
+  if (titleEl && !titleEl.matches(':focus')) titleEl.textContent = ht;
+  if (subEl && !subEl.matches(':focus')) subEl.textContent = hs;
 }
 
 // ── GOALS ──
@@ -4196,7 +4307,7 @@ function loadRewardNames(data) {
 function updateRewardDisplays() {
   // Week reward title
   const wrTitle = document.querySelector('.week-reward-title span:first-child');
-  if (wrTitle) wrTitle.innerHTML = SVG.gift + ' ' + (rewardWeekName || t('weekReward'));
+  if (wrTitle) wrTitle.innerHTML = SVG.gift + ' ' + (rewardWeekName ? escHtml(rewardWeekName) : t('weekReward'));
   // Month reward labels
   const rewardLabels = document.querySelectorAll('.reward-label');
   if (rewardLabels[0]) rewardLabels[0].textContent = rewardMonth2Name || t('reward2Label');
@@ -4572,7 +4683,7 @@ function renderEditList() {
       dayBtns += `<button type="button" class="day-toggle${isOn ? ' active' : ''}" data-idx="${idx}" data-day="${d}" onclick="toggleDay(${idx},${d})">${DAY_NAMES[d]}</button>`;
     }
     card.innerHTML = `
-      <textarea data-idx="${idx}" data-field="name" rows="2" placeholder="${t('taskPlaceholder')}" onfocus="this.select()" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${tk.name.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
+      <textarea data-idx="${idx}" data-field="name" rows="2" placeholder="${t('taskPlaceholder')}" onfocus="this.select()" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'">${escHtml(tk.name)}</textarea>
       <div class="edit-row">
         <div class="edit-field"><label class="edit-label">${t('plusPoints')}</label><div class="spin-wrap"><input type="number" data-idx="${idx}" data-field="plus" value="${tk.plus}" placeholder="0" min="0" max="99" onfocus="this.dataset.old=this.value;this.value=''" onblur="if(!this.value)this.value=this.dataset.old"><div class="spin-btns"><button class="spin-btn" onclick="spinVal(this,1)" type="button">▲</button><button class="spin-btn" onclick="spinVal(this,-1)" type="button">▼</button></div></div></div>
         <div class="edit-field"><label class="edit-label">${t('minusPoints')}</label><div class="spin-wrap"><input type="number" data-idx="${idx}" data-field="minus" value="${tk.minus}" placeholder="0" min="0" max="99" onfocus="this.dataset.old=this.value;this.value=''" onblur="if(!this.value)this.value=this.dataset.old"><div class="spin-btns"><button class="spin-btn" onclick="spinVal(this,1)" type="button">▲</button><button class="spin-btn" onclick="spinVal(this,-1)" type="button">▼</button></div></div></div>
@@ -4598,7 +4709,7 @@ function renderEditList() {
         <span class="proof-toggle-label">${t('catLabel')}</span>
         <select class="cat-select" onchange="setTaskCat(${idx}, this.value)">
           <option value="" ${!tk.catId ? 'selected' : ''}>${t('catNone')}</option>
-          ${categories.map(c => `<option value="${c.id}" ${tk.catId === c.id ? 'selected' : ''}>${c.name || '...'}</option>`).join('')}
+          ${categories.map(c => `<option value="${c.id}" ${tk.catId === c.id ? 'selected' : ''}>${escHtml(c.name || '...')}</option>`).join('')}
         </select>
       </div>` : ''}`;
     container.appendChild(card);
@@ -4647,7 +4758,7 @@ function renderCatList() {
   categories.forEach((cat, i) => {
     html += `<div class="cat-card">
       <div class="cat-dot" style="background:${cat.color};" onclick="openCatColorPicker(${i})"></div>
-      <input type="text" class="cat-name-input" value="${(cat.name||'').replace(/"/g,'&quot;')}" placeholder="${t('catNamePlaceholder')}" data-catidx="${i}" onchange="updateCatName(${i}, this.value)">
+      <input type="text" class="cat-name-input" value="${escHtml(cat.name||'')}" placeholder="${t('catNamePlaceholder')}" data-catidx="${i}" onchange="updateCatName(${i}, this.value)">
       <button class="cat-del" onclick="deleteCat(${i})">✕</button>
     </div>`;
     if (window._catColorPickerIdx === i) {
@@ -4727,8 +4838,9 @@ function toggleDay(idx, day) {
 function addTask() {
   if (isSub()) return; // Sub darf keine Aufgaben anlegen
   syncEditInputs();
-  // Free users (trial/basic): max 5 tasks — premium unlimited
-  if (currentPlan !== 'premium' && tasks.length >= 5) {
+  // Aufgaben-Limit nur in der KOSTENLOSEN Basis (abgelaufener Trial ohne Abo): max 5.
+  // Basic, Premium und aktiver Trial: unbegrenzt.
+  if (!isPremiumActive() && currentPlan !== 'basic' && tasks.length >= 5) {
     alert(t('taskLimit'));
     showPricing();
     return;
@@ -4978,7 +5090,7 @@ function renderFeedback() {
     let html = '';
     if (fb.mood) html += '<div>' + t('feedbackMood') + ': ' + MOOD_EMOJIS[fb.mood] + '</div>';
     if (fb.rating) html += '<div>' + t('feedbackRating') + ': ' + '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating) + '</div>';
-    if (fb.text) html += '<div style="margin-top:4px;color:var(--text);">' + fb.text.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
+    if (fb.text) html += '<div style="margin-top:4px;color:var(--text);">' + escHtml(fb.text).replace(/\n/g,'<br>') + '</div>';
     document.getElementById('feedbackSentSummary').innerHTML = html;
   } else {
     document.getElementById('feedbackLocked').style.display = 'none';
@@ -5676,7 +5788,8 @@ function updatePricingDisplay() {
   basicFeatures.innerHTML = [1,2,3,4,5,6,7].map(i => '<li>' + t('pricingBasicF' + i) + '</li>').join('');
 
   const premFeatures = document.getElementById('pricingPremiumFeatures');
-  premFeatures.innerHTML = [1,2,3,4,5,6,7].map(i => '<li>' + t('pricingPremiumF' + i) + '</li>').join('');
+  // 'Multi' (Mehr-Sub-/Mehr-Herren-Modus) thematisch direkt nach 'Dom/Sub-Rollen' (F3) einfügen.
+  premFeatures.innerHTML = ['1','2','3','Multi','4','5','6','7'].map(k => '<li>' + t('pricingPremiumF' + k) + '</li>').join('');
 
   // Labels
   document.getElementById('pricingTitle').textContent = t('pricingTitle');
@@ -5781,6 +5894,7 @@ async function startAddonCheckout(subId, period) {
   subId = subId || syncCode;
   period = period || 'month';
   if (!subId) return;
+  if (!domSubAddonEligible()) { domSubGoPremium(); return; } // Premium-Pflicht (Hauptpaarung)
   if (isIOSApp) {
     alert('Zusatz-Subs sind in der App-Store-Version in Vorbereitung. Aktuell über die Web-App (Safari) buchbar.');
     return;
@@ -5800,6 +5914,135 @@ async function startAddonCheckout(subId, period) {
     if (data.url) { window.location.href = data.url; }
     else { alert(data.error || 'Fehler beim Checkout'); }
   } catch(e) { console.error('Addon checkout error:', e); alert('Verbindungsfehler'); }
+}
+
+// ── DOM-MEHR-SUB iOS ADD-ON (Staffel-Tiers +1..+4, Modell A „pro Tab automatisch") ────────────
+// Apple erlaubt nur EIN Abo pro Subscription-Gruppe gleichzeitig → „pro Sub" als N Einzelkäufe ist
+// nicht möglich. Lösung: gegenseitig ausschließende Stufen +1/+2/+3/+4 in einer eigenen Gruppe;
+// der Preis pro Sub bleibt gleich. extraSeats = aktuelle Stufe = Anzahl bezahlter Zusatz-Sitze.
+// Jeder weitere Sub-Tab (außer Hauptsub = Hauptpaarung, im Premium enthalten) belegt einen Sitz.
+// „Freischalten" pro Tab nutzt einen freien bezahlten Sitz oder kauft/upgradet automatisch eine Stufe.
+const ADDON_MAX_TIER = 4; // +1..+4 → max. 5 Subs inkl. Hauptsub
+
+function getAddonIOSProductId(tier, period) {
+  tier = parseInt(tier, 10);
+  if (!(tier >= 1 && tier <= ADDON_MAX_TIER)) return null;
+  return 'app.getdevotion.addon' + tier + '.' + (period === 'year' ? 'yearly' : 'monthly');
+}
+// Stufe (Sitzzahl) aus einer Add-on-Produkt-ID ableiten (Fallback, falls Swift kein seats meldet).
+function addonTierFromProductId(pid) {
+  const m = /addon(\d)/.exec(pid || '');
+  return m ? Math.max(1, Math.min(ADDON_MAX_TIER, parseInt(m[1], 10))) : 0;
+}
+// Nur der neue native iOS-Build signalisiert Add-on-Fähigkeit (window.__devotionAddon via WKUserScript).
+// Ältere Builds (ohne Flag) lösen KEINEN Kauf aus → Gate zeigt dort „in Vorbereitung". So darf die
+// Web-v32 jederzeit live, ohne dass eine veraltete App einen Kauf nicht-existenter Produkte anstößt.
+function iosAddonNativeReady() { return isIOSApp && window.__devotionAddon === true; }
+// Add-on-Pflicht: Zusatz-Subs gibt es NUR, wenn die HAUPTPAARUNG echtes Premium hat (aktiv bezahlt,
+// im Zeitraum gekündigt, oder manuell freigeschaltet). Trial/Basic/abgelaufen → kein Kauf, Upsell.
+function domSubAddonEligible() {
+  const s = window._domMainSubscription;
+  if (!s) return false;
+  if (s.manual === true) return true;                 // manueller Premium-Grant
+  if (s.plan !== 'premium') return false;             // Basic/kein Premium zählt nicht
+  if (s.status === 'active') return true;
+  if (s.status === 'canceled' && s.currentPeriodEnd && new Date(s.currentPeriodEnd) > new Date()) return true;
+  return false;
+}
+// ── Option 2: 1 Zusatz-Sub im 30-Tage-Trial gratis testbar ──
+// Ende des Hauptpaarungs-Trials in ms (createdAt + 30 Tage). 0 = unbekannt.
+function domMainTrialEndMs() {
+  if (!window._domMainCreatedAt) return 0;
+  const t = new Date(window._domMainCreatedAt).getTime();
+  return isNaN(t) ? 0 : t + (30 * 24 * 60 * 60 * 1000);
+}
+// Hauptpaarung im aktiven Trial (kein echtes Premium UND innerhalb der 30 Tage).
+function domMainTrialActive() {
+  if (domSubAddonEligible()) return false; // echtes Premium → kein Trial-Gratis noetig
+  const end = domMainTrialEndMs();
+  return end > 0 && Date.now() < end;
+}
+// Anzahl aktuell GRATIS im Trial laufender Zusatz-Subs (Marker trialFree, nicht beendet). Genau 1 erlaubt.
+function trialFreeActiveCount() {
+  const reg = window._domSubs || {};
+  return Object.keys(reg).filter(id => { const s = reg[id]; return s && s.trialFree === true && s.status !== 'ended'; }).length;
+}
+// „Premium holen": zum Hauptsub-Tab wechseln und die Premium-Auswahl öffnen.
+function domSubGoPremium() {
+  const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
+  if (window._domMainCode && window._domMainCode !== syncCode) switchDomTab(window._domMainCode);
+  setTimeout(function(){ if (typeof showPricing === 'function') showPricing(); }, 350);
+}
+// Bezahlte Zusatz-Sitze (iOS-Stufe), gespiegelt aus pflichten/{mainCode}/subscription/extraSeats.
+function iosExtraSeats() {
+  return Math.max(0, Math.min(ADDON_MAX_TIER, parseInt(window._domExtraSeats, 10) || 0));
+}
+// Sub-Stränge, die aktuell einen iOS-Sitz belegen (Registry: premium via Add-on, nicht beendet).
+// Pausierte zählen mit — der Sitz bleibt für die Beziehung reserviert, bis sie beendet wird.
+function iosSeatedSubIds() {
+  const reg = window._domSubs || {};
+  return Object.keys(reg).filter(id => {
+    const s = reg[id];
+    return s && s.status !== 'ended' && s.premium === true && s.seatSource === 'ios_addon';
+  });
+}
+// Einen bezahlten Sitz dieser Sub zuweisen (ohne neuen Kauf) — spiegelt domSubUnlock, Quelle ios_addon.
+function iosAssignSeat(subId) {
+  if (!db || !subId || !window._domMainCode) return;
+  const mc = window._domMainCode;
+  const now = firebase.database.ServerValue.TIMESTAMP;
+  try { db.ref('strands/' + subId + '/status').set('active'); } catch(e){}
+  try { db.ref('strands/' + subId + '/lastActivity').set({ timestamp: now, device: deviceId, type: 'strandStatus', status: 'active' }); } catch(e){}
+  try { db.ref('strands/' + subId + '/subscription').set({ source: 'ios_addon', plan: 'premium', status: 'active', seatOf: mc, updatedAt: new Date().toISOString() }); } catch(e){}
+  try {
+    db.ref('pflichten/' + mc + '/subs/' + subId + '/status').set('active');
+    db.ref('pflichten/' + mc + '/subs/' + subId + '/premium').set(true);
+    db.ref('pflichten/' + mc + '/subs/' + subId + '/seatSource').set('ios_addon');
+  } catch(e){}
+  const ov = document.getElementById('domSubGate'); if (ov) ov.classList.remove('open');
+}
+// Sitz wieder einziehen (NUR bei echtem Stufen-Downgrade) → Tab gesperrt, Sub sieht „wartet auf Freischaltung".
+function iosReleaseSeat(subId) {
+  if (!db || !subId || !window._domMainCode) return;
+  const mc = window._domMainCode;
+  try { db.ref('strands/' + subId + '/subscription').remove(); } catch(e){}
+  try { db.ref('strands/' + subId + '/status').set('pending'); } catch(e){}
+  try {
+    db.ref('pflichten/' + mc + '/subs/' + subId + '/premium').set(false);
+    db.ref('pflichten/' + mc + '/subs/' + subId + '/seatSource').remove();
+    db.ref('pflichten/' + mc + '/subs/' + subId + '/status').set('pending');
+  } catch(e){}
+}
+// Sitze auf die bezahlte Stufe begrenzen. NUR bei echtem Downgrade aufrufen — überzählige jüngste zuerst sperren.
+function reconcileIosSeats() {
+  const seats = iosExtraSeats();
+  const seated = iosSeatedSubIds();
+  if (seated.length <= seats) return;
+  const reg = window._domSubs || {};
+  const youngestFirst = seated.slice().sort((a, b) => ((reg[b] && reg[b].createdAt) || 0) - ((reg[a] && reg[a].createdAt) || 0));
+  youngestFirst.slice(0, seated.length - seats).forEach(id => iosReleaseSeat(id));
+}
+// „Freischalten" auf iOS: freier Sitz → sofort zuweisen, sonst Kauf/Upgrade auf die nötige Stufe.
+function iosUnlockOrBuy(subId, period) {
+  subId = subId || syncCode;
+  period = period || 'month';
+  if (!subId || !window._isDomTab) return;
+  if (!iosAddonNativeReady()) { alert('Bitte aktualisiere Devotion im App Store, um weitere Subs freizuschalten.'); return; }
+  if (!domSubAddonEligible()) { domSubGoPremium(); return; } // Premium-Pflicht (Hauptpaarung)
+  const reg = (window._domSubs || {})[subId];
+  if (reg && reg.premium === true && reg.seatSource === 'ios_addon') { iosAssignSeat(subId); return; } // schon ein Sitz
+  const seats = iosExtraSeats();
+  const used = iosSeatedSubIds().length;
+  if (used < seats) { iosAssignSeat(subId); return; }                  // freier, bereits bezahlter Sitz
+  if (seats >= ADDON_MAX_TIER) { alert('Maximal ' + ADDON_MAX_TIER + ' Zusatz-Subs erreicht.'); return; }
+  const neededTier = used + 1;                                         // neue Gesamtzahl bezahlter Sitze
+  const pid = getAddonIOSProductId(neededTier, period);
+  if (!pid) return;
+  window._pendingSeatSubId = subId;                                    // nach erfolgreichem Kauf bekommt dieser Tab den Sitz
+  const btn = document.getElementById('domSubGateBtn');
+  if (btn) { btn.textContent = '...'; btn.disabled = true; }
+  try { window.webkit.messageHandlers.iap.postMessage({ action: 'purchase', productId: pid }); }
+  catch(e) { window._pendingSeatSubId = null; if (btn) { btn.disabled = false; btn.textContent = 'Freischalten'; } alert('Kauf konnte nicht gestartet werden.'); }
 }
 
 // ── iOS IAP Helpers ──────────────────────────────────────────────────────────
@@ -5822,14 +6065,41 @@ function restoreIOSPurchases() {
 // Called by native Swift code after purchase / restore
 window.onIAPResult = function(result) {
   document.querySelectorAll('.pricing-btn').forEach(btn => { btn.disabled = false; });
+  const _gBtn = document.getElementById('domSubGateBtn'); if (_gBtn) _gBtn.disabled = false;
   updatePricingDisplay();
+
+  // DOM-MEHR-SUB iOS Add-on: Tier-Kauf / -Wiederherstellung → bezahlte Sitze (extraSeats) setzen + Sitz zuweisen.
+  if (result && result.kind === 'addon') {
+    if (result.success) {
+      const seats = Math.max(0, Math.min(ADDON_MAX_TIER, parseInt(result.seats, 10) || addonTierFromProductId(result.productId)));
+      const prev = iosExtraSeats();
+      window._domExtraSeats = seats;
+      if (window._domMainCode) { try { db.ref('pflichten/' + window._domMainCode + '/subscription/extraSeats').set(seats); } catch(e){} }
+      if (window._pendingSeatSubId) { iosAssignSeat(window._pendingSeatSubId); window._pendingSeatSubId = null; }
+      if (!result.isRestore && seats < prev) reconcileIosSeats(); // echtes Downgrade → überzählige Tabs sperren
+      if (result.isRestore) {
+        alert(currentLang === 'de' ? '✓ Zusatz-Abo wiederhergestellt!' : '✓ Add-on restored!');
+      } else {
+        try { trackEvent('purchase', { plan: 'addon', seats: seats, period: result.period }); } catch(e){}
+      }
+    } else {
+      window._pendingSeatSubId = null;
+      const aerr = result.error || '';
+      if (aerr && aerr !== 'cancelled' && aerr !== 'pending' && aerr !== 'no_purchases') {
+        alert(currentLang === 'de' ? 'Fehler: ' + aerr : 'Error: ' + aerr);
+      }
+      if (typeof domSubEnforceGate === 'function' && window._isDomTab) domSubEnforceGate(window._subStrandStatus);
+    }
+    return;
+  }
 
   if (result.success) {
     currentPlan = result.plan || 'basic';
     subStatus = 'active';
     trialDaysLeft = 0;
     if (currentRef) {
-      currentRef.child('subscription').set({
+      // update (nicht set): erhält evtl. vorhandene Geschwister-Felder wie extraSeats (iOS-Add-on-Stufe).
+      currentRef.child('subscription').update({
         plan: currentPlan,
         status: 'active',
         productId: result.productId || '',
@@ -5884,6 +6154,24 @@ async function openCustomerPortal() {
 function loadSubscription(data) {
   subscriptionData = data && data.subscription ? data.subscription : null;
 
+  // Option 2 Auto-Lock: ein im Trial GRATIS freigeschalteter Zusatz-Sub (trialFreeUntil gesetzt),
+  // dessen Trial abgelaufen ist und der KEIN echtes Add-on hat → wieder sperren (Dom- und Sub-Seite).
+  // Bezahlte Subs (Stripe/iOS/manual) bleiben unberuehrt.
+  if ((window._isDomTab || window._isSubStrand) && data && data.status === 'active' && data.trialFreeUntil) {
+    const expired = new Date(data.trialFreeUntil).getTime() <= Date.now();
+    const sub = data.subscription;
+    const paid = !!(sub && (sub.stripeSubscriptionId || sub.source === 'ios_addon' || sub.manual === true)
+                    && (sub.status === 'active' || (sub.status === 'canceled' && sub.currentPeriodEnd && new Date(sub.currentPeriodEnd) > new Date())));
+    if (expired && !paid) {
+      const mc = window._domMainCode || data.mainCode;
+      try { db.ref('strands/' + syncCode + '/status').set('blocked'); } catch(e){}
+      try { if (mc) db.ref('pflichten/' + mc + '/subs/' + syncCode + '/status').set('blocked'); } catch(e){}
+      window._subStrandStatus = 'blocked';
+      if (typeof domSubEnforceGate === 'function') domSubEnforceGate('blocked');
+      return;
+    }
+  }
+
   // Manual override — free premium set directly in Firebase
   if (subscriptionData && subscriptionData.manual === true) {
     currentPlan = subscriptionData.plan || 'premium';
@@ -5921,6 +6209,11 @@ function loadSubscription(data) {
       checkDeviceTrial();
       return; // async — will call updateSubUI() + applyFeatureGating() when done
     }
+  }
+  // Dom-Mehr-Sub / Nebenherr: ein bezahlter Strang ist IMMER voll premium — pro Beziehung gibt es kein „Basic".
+  // Der Add-on-Webhook schreibt evtl. plan:'basic'; hier auf premium normalisieren, solange aktiv/im Zeitraum.
+  if ((window._isDomTab || window._isSubStrand || window._isNebenherr) && (subStatus === 'active' || subStatus === 'canceled') && currentPlan !== 'trial') {
+    currentPlan = 'premium';
   }
   updateSubUI();
   applyFeatureGating();
@@ -6019,15 +6312,21 @@ function updateSubUI() {
 }
 
 // Feature gating
+// 30-Tage-Trial = volles Premium (alle Funktionen + werbefrei), SOLANGE Tage übrig sind.
+// Nach Ablauf (trialDaysLeft = 0) fällt der Nutzer auf die kostenlose Basis (Kern frei, Premium gesperrt, Werbung).
+function isPremiumActive() {
+  return currentPlan === 'premium' || (currentPlan === 'trial' && trialDaysLeft > 0);
+}
 function canUse(feature) {
-  // Premium: everything unlocked, no ads
-  if (currentPlan === 'premium') {
+  // Premium ODER aktiver Trial: alles frei.
+  if (isPremiumActive()) {
     return true;
   }
   // PIN: ab Basic (Trial NICHT)
   if (feature === 'pin') return currentPlan === 'basic';
-  // Dom/Sub-Rollen: im Trial testbar; Basic nur als Bestandspaar (grandfathered)
-  if (feature === 'roles') return currentPlan === 'trial' || rolesGrandfathered();
+  // Dom/Sub-Rollen sind Premium: voll im aktiven Trial + Premium (via isPremiumActive oben).
+  // Nach Trial-Ablauf (Gratis-Basis) und in Basic NICHT mehr — nur Bestandspaare behalten sie.
+  if (feature === 'roles') return rolesGrandfathered();
   // Übrige Premium-Features: nur Premium
   const premiumFeatures = ['photos', 'monthView', 'charts', 'export'];
   return !premiumFeatures.includes(feature);
@@ -6156,8 +6455,8 @@ let adsBannerLoaded = false;
 let adsInterstitialLoaded = false;
 
 function shouldShowAds() {
-  // iOS-App: keine Web-Ads (Apple ATT / Google-AdSense-Policy)
-  return !isIOSApp && currentPlan !== 'premium';
+  // App ist aktuell KOMPLETT werbefrei (AdSense für 18+ nicht freigegeben; Monetarisierung über Abos, Alternativen später).
+  return false;
 }
 
 function initAds() {
@@ -6254,7 +6553,7 @@ function refreshAdsState() {
 // ── INIT ──
 // ── SERVICE WORKER ──
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(e => console.log('SW:', e));
+  /* TEST-BUILD: Service Worker deaktiviert */
 }
 
 applyLanguage();
@@ -6291,10 +6590,15 @@ function showOnboard2() {
   document.getElementById('onboardScreen1').classList.add('hidden');
   document.getElementById('onboardScreen2').classList.remove('hidden');
 }
+function showOnboard3() {
+  document.getElementById('onboardScreen2').classList.add('hidden');
+  document.getElementById('onboardScreen3').classList.remove('hidden');
+}
 
 function finishOnboarding() {
   localStorage.setItem('devotion_onboarded', '1');
   document.getElementById('onboardScreen2').classList.add('hidden');
+  document.getElementById('onboardScreen3').classList.add('hidden');
   document.getElementById('setupScreen').classList.remove('hidden');
   if (!document.getElementById('setupCodeInput').value.trim()) generateCode(); // sicheren Code vorschlagen (überschreibbar)
 }
